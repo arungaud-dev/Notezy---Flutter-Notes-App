@@ -23,37 +23,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  //--------------------------------------
+  final categories = ["Personal", "School", "Work", "Company", "General"];
+
+  String? filter;
+
   @override
   Widget build(BuildContext context) {
+    final data = ref.watch(notesProivder);
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        // titleSpacing: 0,
         title: Text.rich(TextSpan(
-            text: "Notes",
+            text: "Think",
             style: GoogleFonts.inter(
                 fontSize: 30,
                 color: Colors.green[700],
                 fontWeight: FontWeight.bold),
             children: [
               TextSpan(
-                  text: " of Arun",
+                  text: " Notes",
                   style: GoogleFonts.inter(
-                      fontSize: 30,
+                      fontSize: 20,
                       fontWeight: FontWeight.w400,
-                      color: Colors.black))
+                      color: Colors.black,
+                      fontStyle: FontStyle.italic))
             ])),
         actions: [
-          IconButton(
-              onPressed: () {},
-              icon: Icon(
-                Icons.check_circle,
-                color: Colors.green[700],
-              ))
+          Container(
+            padding: EdgeInsets.all(2),
+            decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  width: 1,
+                  color: Colors.green[700]!,
+                )),
+            child: Icon(
+              Icons.check_circle,
+              color: Colors.green[700],
+            ),
+          ),
+          SizedBox(
+            width: 18,
+          )
         ],
       ),
+      //----------------------------------------------- BODY LAYOUTS --------->>
       backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
@@ -61,57 +79,162 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             Divider(),
             SizedBox(
-              height: 15,
+              height: 5,
             ),
-            Consumer(builder: (context, ref, _) {
-              final data = ref.watch(notesProivder);
-              // return NoteCard(
-              //     title: data.isNotEmpty ? data[0].body : "Q4 Planning",
-              //     body:
-              //         "Discussed project timelines, resource allocation, and key deliverables for the upcoming quarter. Team agreed on...",
-              //     isStar: false,
-              //     time: "2 hours ago",
-              //     category: "Work");
-              return Expanded(
-                child: data.isEmpty
-                    ? Center(
-                        child: Text("Data is empty"),
-                      )
-                    : ListView.builder(
-                        itemCount: data.length,
-                        // padding: EdgeInsets.symmetric(vertical: 5),
-                        itemBuilder: (context, index) {
-                          final note = data[index];
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => NoteView(
+            SizedBox(
+              height: 30,
+              //FILTER FEATURE  --------------->>>>>>>>>
+              child: Row(
+                children: [
+                  Text("Filter "),
+                  PopupMenuButton(
+                    padding: EdgeInsets.symmetric(horizontal: 30),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                    color: Colors.white,
+                    onSelected: (value) {
+                      ref.read(notesProivder.notifier).getData(value);
+                      filter = value;
+                    },
+                    icon: Icon(
+                      Icons.filter_list,
+                      color: Colors.black.withValues(alpha: 0.7),
+                    ),
+                    itemBuilder: (context) {
+                      return categories
+                          .map((data) =>
+                              PopupMenuItem(value: data, child: Text(data)))
+                          .toList();
+                    },
+                  ),
+                  filter != null
+                      ? GestureDetector(
+                          onTap: () {
+                            ref.read(notesProivder.notifier).getData();
+                            filter = null;
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(22),
+                                color: Colors.green.withValues(alpha: 0.05)),
+                            child: Center(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    filter!,
+                                    style: TextStyle(color: Colors.green[700]),
+                                  ),
+                                  SizedBox(
+                                    width: 4,
+                                  ),
+                                  Icon(
+                                    Icons.clear,
+                                    color: Colors.green[700],
+                                    size: 18,
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
+                        )
+                      : SizedBox()
+                ],
+              ),
+              //--------------------------------------------------------------
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Expanded(
+              child: data.isEmpty
+                  ? Center(
+                      child: Text("Data is empty"),
+                    )
+                  : ListView.builder(
+                      itemCount: data.length,
+                      // padding: EdgeInsets.symmetric(vertical: 5),
+                      itemBuilder: (context, index) {
+                        final note = data[index];
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => NoteView(
                                           id: note.id!,
                                           title: note.title,
                                           body: note.body,
                                           time: note.createdAt!,
-                                          category: note.category)));
+                                          category: note.category,
+                                          filter: filter,
+                                        )));
+                          },
+                          child: NoteCard(
+                            title: note.title,
+                            body: note.body,
+                            isStar: note.isStar == 1,
+                            time: note.createdAt!,
+                            category: note.category,
+                            callback: () {
+                              ref
+                                  .read(notesProivder.notifier)
+                                  .updateStar(note.id!, filter);
                             },
-                            child: NoteCard(
-                                title: note.title,
-                                body: note.body,
-                                isStar: note.isStar == 1,
-                                time: note.createdAt!,
-                                category: note.category),
-                          );
-                        },
-                      ),
-              );
-            }),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+
+            // Consumer(builder: (context, ref, _) {
+            //   final data = ref.watch(notesProivder);
+            //   return Expanded(
+            //     child: data.isEmpty
+            //         ? Center(
+            //             child: Text("Data is empty"),
+            //           )
+            //         : ListView.builder(
+            //             itemCount: data.length,
+            //             // padding: EdgeInsets.symmetric(vertical: 5),
+            //             itemBuilder: (context, index) {
+            //               final note = data[index];
+            //               return GestureDetector(
+            //                 onTap: () {
+            //                   Navigator.push(
+            //                       context,
+            //                       MaterialPageRoute(
+            //                           builder: (context) => NoteView(
+            //                               id: note.id!,
+            //                               title: note.title,
+            //                               body: note.body,
+            //                               time: note.createdAt!,
+            //                               category: note.category)));
+            //                 },
+            //                 child: NoteCard(
+            //                     title: note.title,
+            //                     body: note.body,
+            //                     isStar: note.isStar == 1,
+            //                     time: note.createdAt!,
+            //                     category: note.category),
+            //               );
+            //             },
+            //           ),
+            //   );
+            // }),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (context) => NoteAddScreen()));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => NoteAddScreen(
+                        filter: filter,
+                      )));
         },
         child: Icon(Icons.add),
       ),

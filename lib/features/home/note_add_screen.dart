@@ -6,7 +6,8 @@ import 'package:notes_app/provider/data_provider.dart';
 import 'package:intl/intl.dart';
 
 class NoteAddScreen extends StatefulWidget {
-  const NoteAddScreen({super.key});
+  final String? filter;
+  const NoteAddScreen({super.key, required this.filter});
 
   @override
   State<NoteAddScreen> createState() => _NoteAddScreenState();
@@ -65,7 +66,9 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                         createdAt: fmtDate(DateTime.now()),
                         category: selected!,
                         isStar: isStar);
-                    await ref.read(notesProivder.notifier).addData(data);
+                    await ref
+                        .read(notesProivder.notifier)
+                        .addData(data, widget.filter);
                     _titleController.clear();
                     _bodyController.clear();
                   }
@@ -91,7 +94,7 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                   hintStyle: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black.withOpacity(0.5)),
+                      color: Colors.black.withValues(alpha: 0.5)),
                   border: InputBorder.none,
                 ),
                 style: GoogleFonts.inter(
@@ -112,7 +115,7 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
               ),
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
-                  color: Colors.black.withOpacity(0.06)),
+                  color: Colors.black.withValues(alpha: 0.06)),
               child: DropdownButton(
                 value: selected,
                 underline: SizedBox(),
@@ -153,7 +156,7 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                   width: 230,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15),
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                   ),
                   child: TextField(
                     decoration: InputDecoration(
@@ -161,7 +164,7 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                         border: InputBorder.none,
                         hintText: "Enter category name",
                         hintStyle: GoogleFonts.inter(
-                            color: Colors.black.withOpacity(0.5),
+                            color: Colors.black.withValues(alpha: 0.5),
                             fontWeight: FontWeight.w500)),
                   ),
                 ),
@@ -193,7 +196,7 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                   hintText: "Start writing your note...",
                   border: InputBorder.none,
                   hintStyle: TextStyle(
-                    color: Colors.black.withOpacity(0.4),
+                    color: Colors.black.withValues(alpha: 0.4),
                   ),
                 ),
               ),

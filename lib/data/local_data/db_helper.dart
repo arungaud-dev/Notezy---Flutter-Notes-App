@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:notes_app/data/models/local_data_model.dart';
@@ -35,25 +36,42 @@ class DBHelper {
 
   //INSERT DATA
   Future<void> insertData(DataModel data) async {
-    final db = await database;
-    await db.insert(tableName, data.toMap());
+    try {
+      final db = await database;
+      await db.insert(tableName, data.toMap());
+    } catch (e) {
+      debugPrint("A ERROR ON DATA INSERTING PLEASE CHECK DATABASE FILE");
+    }
   }
 
 //GET DATA
   Future<List<DataModel>> getData() async {
     final db = await database;
-    final data = await db.query(tableName);
-    return data.map((e) => DataModel.fromMap(e)).toList();
+    try {
+      final data = await db.query(tableName);
+      return data.map((e) => DataModel.fromMap(e)).toList();
+    } catch (e) {
+      debugPrint("A ERROR ON DATA GETTING PLEASE CHECK DATABASE FILE");
+      return [];
+    }
   }
 
   //DELETE DATA
   Future<void> deleteData(int id) async {
     final db = await database;
-    await db.delete(tableName, where: "id=?", whereArgs: [id]);
+    try {
+      await db.delete(tableName, where: "id=?", whereArgs: [id]);
+    } catch (e) {
+      debugPrint("A ERROR ON DATA DELETING");
+    }
   }
 
   Future<void> updateData(int id, DataModel data) async {
     final db = await database;
-    await db.update(tableName, data.toMap(), where: "id=?", whereArgs: [id]);
+    try {
+      await db.update(tableName, data.toMap(), where: "id=?", whereArgs: [id]);
+    } catch (e) {
+      debugPrint("A ERROR ON DATA UPDATING");
+    }
   }
 }

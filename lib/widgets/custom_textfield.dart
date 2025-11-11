@@ -18,7 +18,7 @@ class CustomInputText extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
-          color: Colors.grey.withOpacity(0.06)),
+          color: Colors.grey.withValues(alpha: 0.06)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 3),
         child: TextField(
@@ -30,10 +30,10 @@ class CustomInputText extends StatelessWidget {
               hintText: hint,
               prefixIcon: Icon(
                 icon,
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
               ),
               hintStyle: GoogleFonts.inter(
-                  color: Colors.black.withOpacity(0.5), fontSize: 16)),
+                  color: Colors.black.withValues(alpha: 0.5), fontSize: 16)),
         ),
       ),
     );
