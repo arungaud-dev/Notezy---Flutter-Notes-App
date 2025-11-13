@@ -1,40 +1,45 @@
 class DataModel {
-  final int? id;
+  final String id;
   final String title;
   final String body;
   final String? createdAt;
-  final String? updatedAt;
+  final int? updatedAt;
   final int? isStar;
   final String category;
+  final int isSynced;
 
   DataModel(
-      {this.id,
+      {required this.id,
       required this.title,
       required this.body,
       this.createdAt,
       this.updatedAt,
       this.isStar,
-      required this.category});
+      required this.category,
+      required this.isSynced});
 
   Map<String, dynamic> toMap() {
     return {
+      "id": id,
       "title": title,
       "body": body,
       "createdAt": createdAt,
       "updatedAt": updatedAt,
       "isStar": isStar,
-      "category": category
+      "category": category,
+      "isSynced": isSynced
     };
   }
 
   DataModel copyWith(
-      {int? id,
+      {String? id,
       String? title,
       String? body,
       String? createdAt,
-      String? updatedAt,
+      int? updatedAt,
       int? isStar,
-      String? category}) {
+      String? category,
+      int? isSynced}) {
     return DataModel(
         id: id ?? this.id,
         title: title ?? this.title,
@@ -42,7 +47,8 @@ class DataModel {
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
         isStar: isStar ?? this.isStar,
-        category: category ?? this.category);
+        category: category ?? this.category,
+        isSynced: isSynced ?? this.isSynced);
   }
 
   factory DataModel.fromMap(Map<String, dynamic> map) {
@@ -53,6 +59,7 @@ class DataModel {
         createdAt: map["createdAt"],
         updatedAt: map["updatedAt"],
         isStar: map["isStar"],
-        category: map["category"]);
+        category: map["category"],
+        isSynced: map["isSynced"]);
   }
 }

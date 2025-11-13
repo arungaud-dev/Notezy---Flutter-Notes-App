@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:notes_app/data/models/local_data_model.dart';
+import 'package:notes_app/data/models/data_model.dart';
 import 'package:notes_app/provider/data_provider.dart';
 import 'package:intl/intl.dart';
 
@@ -21,7 +21,7 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
   int isStar = 0;
 
   //-------------------------------------------------------------
-  final _df = DateFormat('d MMM yyyy', 'en_US'); // "2 Nov 2025"
+  final _df = DateFormat('d MMM yyyy', 'en_US');
 
   String fmtDate(DateTime dt) => _df.format(dt.toLocal());
 
@@ -60,12 +60,18 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                 onPressed: () async {
                   if (_titleController.text.isNotEmpty ||
                       _bodyController.text.isNotEmpty) {
+                    final id = DateTime.now().microsecondsSinceEpoch;
                     final data = DataModel(
+                        id: id.toString(),
                         title: _titleController.text,
                         body: _bodyController.text,
                         createdAt: fmtDate(DateTime.now()),
                         category: selected!,
-                        isStar: isStar);
+                        isStar: isStar,
+                        isSynced: 0,
+                        updatedAt: id);
+                    debugPrint(
+                        "-------------------------------------------------------------------THE ID IS: ${data.id}");
                     await ref
                         .read(notesProivder.notifier)
                         .addData(data, widget.filter);
@@ -130,12 +136,6 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                   });
                 },
                 dropdownColor: Colors.white,
-                // hint: Text(
-                //   "Select category",
-                //   style: GoogleFonts.inter(
-                //       color: Colors.black.withOpacity(0.6),
-                //       fontWeight: FontWeight.w500),
-                // ),
               ),
             ),
             SizedBox(

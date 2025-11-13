@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notes_app/features/home/note_add_screen.dart';
 import 'package:notes_app/features/home/note_view.dart';
 import 'package:notes_app/provider/data_provider.dart';
+import 'package:notes_app/provider/fire_data_provider.dart';
 import 'package:notes_app/widgets/note_card.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -14,15 +15,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(notesProivder.notifier).getData();
-    });
-  }
-
   //--------------------------------------
   final categories = ["Personal", "School", "Work", "Company", "General"];
 
@@ -31,6 +23,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final data = ref.watch(notesProivder);
+    ref.watch(dataProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -158,13 +151,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       // padding: EdgeInsets.symmetric(vertical: 5),
                       itemBuilder: (context, index) {
                         final note = data[index];
+                        debugPrint(
+                            "---------------SQLITE DATABASE:${note.toMap()}");
                         return GestureDetector(
                           onTap: () {
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) => NoteView(
-                                          id: note.id!,
+                                          id: note.id,
                                           title: note.title,
                                           body: note.body,
                                           time: note.createdAt!,
@@ -181,49 +176,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             callback: () {
                               ref
                                   .read(notesProivder.notifier)
-                                  .updateStar(note.id!, filter);
+                                  .updateStar(note.id, filter);
                             },
                           ),
                         );
                       },
                     ),
             ),
-
-            // Consumer(builder: (context, ref, _) {
-            //   final data = ref.watch(notesProivder);
-            //   return Expanded(
-            //     child: data.isEmpty
-            //         ? Center(
-            //             child: Text("Data is empty"),
-            //           )
-            //         : ListView.builder(
-            //             itemCount: data.length,
-            //             // padding: EdgeInsets.symmetric(vertical: 5),
-            //             itemBuilder: (context, index) {
-            //               final note = data[index];
-            //               return GestureDetector(
-            //                 onTap: () {
-            //                   Navigator.push(
-            //                       context,
-            //                       MaterialPageRoute(
-            //                           builder: (context) => NoteView(
-            //                               id: note.id!,
-            //                               title: note.title,
-            //                               body: note.body,
-            //                               time: note.createdAt!,
-            //                               category: note.category)));
-            //                 },
-            //                 child: NoteCard(
-            //                     title: note.title,
-            //                     body: note.body,
-            //                     isStar: note.isStar == 1,
-            //                     time: note.createdAt!,
-            //                     category: note.category),
-            //               );
-            //             },
-            //           ),
-            //   );
-            // }),
           ],
         ),
       ),

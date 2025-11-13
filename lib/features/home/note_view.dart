@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:notes_app/provider/data_provider.dart';
+import 'package:notes_app/provider/fire_data_provider.dart';
 
 class NoteView extends ConsumerStatefulWidget {
-  final int id;
+  final String id;
   final String title;
   final String body;
   final String time;
@@ -33,7 +34,7 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
 
   Timer? debounce;
   String? selected = "General";
-  int isStar = 0;
+  // int isStar = 0;
   bool confirmation = false;
 
   @override
@@ -59,7 +60,11 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
 
   Future<void> saveAuto() async {
     await ref.read(notesProivder.notifier).updateData(
-        widget.id, _titleController.text, _bodyController.text, widget.filter);
+        widget.id,
+        _titleController.text,
+        _bodyController.text,
+        widget.filter,
+        DateTime.now().microsecondsSinceEpoch);
   }
 
   Future<void> _forceSave() async {
@@ -67,42 +72,25 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
     await saveAuto();
   }
 
-  Future<void> showPopUP() async {
-    showDialog(
-        barrierDismissible: false,
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Alert"),
-            content: Text("Are your sure, You want to delete this note"),
-            actions: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text("Cancel")),
-                  ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          confirmation = true;
-                          Navigator.pop(context);
-                        });
-                      },
-                      child: Text("Delete"))
-                ],
-              )
-            ],
-          );
-        });
-  }
-
   @override
   Widget build(BuildContext context) {
     final data = ref.watch(notesProivder);
-    final star = data.where((data) => data.id == widget.id).first;
+    final filtered = data.where((data) => data.id == widget.id);
+    // ref.watch(dataProvider)
+
+    if (filtered.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.pop(context);
+      });
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(), // या कुछ भी
+        ),
+      );
+    }
+
+    final star = filtered.first;
 
     return PopScope(
         canPop: true,
@@ -171,7 +159,6 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
 
                                         if (!context.mounted) return;
                                         confirmation = false;
-                                        Navigator.pop(context);
                                         Navigator.pop(context);
                                       },
                                       child: Text("Delete"))

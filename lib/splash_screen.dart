@@ -1,23 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:notes_app/auth/screens/login_screen.dart';
+import 'package:notes_app/data/firebase_data/firebase_services.dart';
+import 'package:notes_app/features/home/home_screen.dart';
+import 'package:notes_app/provider/data_provider.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
+  final FirebaseServices services = FirebaseServices(uid: "example_user");
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    Future.delayed(Duration(seconds: 2), () {
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => LoginScreen()));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(notesProivder.notifier).getData();
     });
+
+    // TODO: implement initState
+
+    syncFirebaseToLocal();
+    Future.delayed(Duration(seconds: 1), () {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => HomeScreen()));
+    });
+  }
+
+  Future<void> syncFirebaseToLocal() async {
+    final notes = await services.getDataFromFire(0);
+    // debugPrint(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>DATA FOUND: ${notes}");
+    if (notes.isEmpty) return;
+
+    for (var data in notes) {
+      // debugPrint("------------FROM FIREBASE: ${data.toMap()}");
+      // await dbHelper.insertData(data);
+      ref.read(notesProivder.notifier).addData(data, null);
+    }
   }
 
   @override

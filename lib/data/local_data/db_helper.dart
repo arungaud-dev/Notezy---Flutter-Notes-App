@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'package:notes_app/data/models/local_data_model.dart';
+import 'package:notes_app/data/models/data_model.dart';
 
 class DBHelper {
   static final DBHelper instance = DBHelper._internal();
@@ -14,6 +14,7 @@ class DBHelper {
   static final String column4 = "updatedAt";
   static final String column5 = "isStar";
   static final String column6 = "category";
+  static final String column7 = "isSynced";
 
   static Database? db;
 
@@ -22,13 +23,14 @@ class DBHelper {
     db = await openDatabase(join(await getDatabasesPath(), "myDB.db"),
         version: 1, onCreate: (db, version) async {
       await db.execute("""
-      CREATE table $tableName(id INTEGER PRIMARY KEY AUTOINCREMENT,
+      CREATE table $tableName(id TEXT NOT NULL PRIMARY KEY,
       $column1 TEXT NOT NULL,
       $column2 TEXT NOT NULL,
       $column3 TEXT NOT NULL,
-      $column4 TEXT,
+      $column4 INTEGER,
       $column5 INTEGER,
-      $column6 TEXT NOT NULL)
+      $column6 TEXT NOT NULL,
+      $column7 INTEGER NOT NULL)
       """);
     });
     return db!;
@@ -38,9 +40,11 @@ class DBHelper {
   Future<void> insertData(DataModel data) async {
     try {
       final db = await database;
-      await db.insert(tableName, data.toMap());
+      await db.insert(tableName, data.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace);
     } catch (e) {
-      debugPrint("A ERROR ON DATA INSERTING PLEASE CHECK DATABASE FILE");
+      debugPrint(
+          "A ERROR ON DATA INSERTING PLEASE CHECK DATABASE FILE: ${e.toString()}");
     }
   }
 
@@ -57,7 +61,7 @@ class DBHelper {
   }
 
   //DELETE DATA
-  Future<void> deleteData(int id) async {
+  Future<void> deleteData(String id) async {
     final db = await database;
     try {
       await db.delete(tableName, where: "id=?", whereArgs: [id]);
@@ -66,12 +70,34 @@ class DBHelper {
     }
   }
 
-  Future<void> updateData(int id, DataModel data) async {
+  Future<void> updateData(String id, DataModel data) async {
     final db = await database;
     try {
       await db.update(tableName, data.toMap(), where: "id=?", whereArgs: [id]);
     } catch (e) {
       debugPrint("A ERROR ON DATA UPDATING");
+    }
+  }
+
+  Future<List<DataModel>> getUnSyncedData() async {
+    final db = await database;
+    try {
+      final data =
+          await db.query(tableName, where: "$column7=?", whereArgs: [0]);
+      return data.map((e) => DataModel.fromMap(e)).toList();
+    } catch (e) {
+      debugPrint("A ERROR ON DATA GETTING PLEASE CHECK DATABASE FILE");
+      return [];
+    }
+  }
+
+  Future<void> markSynced(String id) async {
+    final db = await database;
+    try {
+      await db.update(tableName, {column7: 1}, where: "id=?", whereArgs: [id]);
+    } catch (e) {
+      debugPrint(
+          "A ERROR IN DATA SYNCED MARKING PLEASE CHECK SQL FILE//////////////////////////////////////////////////");
     }
   }
 }
