@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:notes_app/data/firebase_data/firebase_services.dart';
-import 'package:notes_app/provider/data_provider.dart';
+import 'package:notes_app/data/firestore_data/firebase_services.dart';
+import 'package:notes_app/providers/notes_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -32,7 +32,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     for (var data in notes) {
       // debugPrint("------------FROM FIREBASE: ${data.toMap()}");
       // await dbHelper.insertData(data);
-      ref.read(notesProivder.notifier).addData(data, null);
+      ref.read(notesProivder.notifier).addData(data);
     }
   }
 

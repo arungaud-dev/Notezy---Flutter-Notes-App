@@ -96,8 +96,7 @@ class DBHelper {
     try {
       await db.update(tableName, {column7: 1}, where: "id=?", whereArgs: [id]);
     } catch (e) {
-      debugPrint(
-          "A ERROR IN DATA SYNCED MARKING PLEASE CHECK SQL FILE//////////////////////////////////////////////////");
+      debugPrint("A ERROR IN DATA SYNCED MARKING PLEASE CHECK SQL FILE");
     }
   }
 }

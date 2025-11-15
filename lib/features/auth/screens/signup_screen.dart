@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:notes_app/auth/auth_services/auth_service.dart';
-import 'package:notes_app/auth/screens/login_screen.dart';
+import 'package:notes_app/features/auth/auth_services/auth_service.dart';
+import 'package:notes_app/features/auth/screens/login_screen.dart';
 import 'package:notes_app/features/home/home_screen.dart';
-import 'package:notes_app/provider/auth_state_provider.dart';
+import 'package:notes_app/providers/auth_state_provider.dart';
 import 'package:notes_app/widgets/custom_textfield.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
@@ -50,7 +50,7 @@ class _LoginScreenState extends ConsumerState<SignupScreen> {
 
           await FirebaseAuth.instance.currentUser?.reload();
 
-// 2) Force Riverpod to refresh the auth stream/provider
+          // 2) Force Riverpod to refresh the auth stream/providers
           ref.refresh(authStateProvider);
           if (mounted) {
             Navigator.of(context).pushAndRemoveUntil(

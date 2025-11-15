@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notes_app/data/local_data/db_helper.dart';
-import 'package:notes_app/data/firebase_data/firebase_services.dart';
-import 'package:notes_app/provider/data_provider.dart';
+import 'package:notes_app/data/firestore_data/firebase_services.dart';
 
 class SyncManager {
   final DBHelper dbHelper;
@@ -23,7 +22,7 @@ class SyncManager {
   }
 }
 
-// provider binding
+// providers binding
 final syncManagerProvider = Provider<SyncManager>((ref) {
   final services = ref.read(firebaseServicesProvider);
   final db = DBHelper.instance;

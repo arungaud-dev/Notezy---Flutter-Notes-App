@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
-import 'package:notes_app/auth/screens/login_screen.dart';
-import 'package:notes_app/auth/screens/signup_screen.dart';
+import 'package:notes_app/features/auth/screens/login_screen.dart';
 import 'package:notes_app/features/home/home_screen.dart';
-import 'package:notes_app/provider/auth_state_provider.dart';
+import 'package:notes_app/providers/auth_state_provider.dart';
 import 'package:notes_app/splash_screen.dart';
 
 void main() async {

@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:notes_app/auth/auth_services/auth_service.dart';
-import 'package:notes_app/auth/screens/signup_screen.dart';
-import 'package:notes_app/data/firebase_data/firebase_services.dart';
-import 'package:notes_app/provider/data_provider.dart';
+import 'package:notes_app/features/auth/auth_services/auth_service.dart';
+import 'package:notes_app/features/auth/screens/signup_screen.dart';
+import 'package:notes_app/data/firestore_data/firebase_services.dart';
+import 'package:notes_app/providers/notes_provider.dart';
 import 'package:notes_app/widgets/custom_textfield.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -37,7 +37,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (mounted) setState(() => isLoading = true);
 
     try {
-      // Capture provider-backed objects BEFORE doing async login (safe)
+      // Capture providers-backed objects BEFORE doing async login (safe)
       final firebaseService = ref.read(firebaseServicesProvider);
       final notesNotifier = ref.read(notesProivder.notifier);
 
@@ -82,7 +82,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     }
   }
-  //-------------------------------------------------------- Sync function after login
+  //Sync function after login
 
 // Change signature: pass firebaseServices instance and notes notifier
   Future<void> syncFirebaseToLocal(
@@ -94,8 +94,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       // Use the captured firebaseService (not ref.read inside here)
       final notes = await firebaseService.getDataFromFire(0);
-      debugPrint(
-          "------------------------------------------------------------ Notes from Fire: ${notes.length}");
 
       if (notes.isEmpty) {
         debugPrint('syncFirebaseToLocal: no notes to sync');
@@ -106,22 +104,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       for (var i = 0; i < notes.length; i++) {
         final data = notes[i];
         try {
-          debugPrint(
-              '------------------------------ (#${i + 1}) Writing Note: ${data.title}');
-          // call notifier.addData (notifier was captured earlier)
-          final maybeFuture = notesNotifier.addData(data, null);
+          // call notifier (notifier was captured earlier)
+          final maybeFuture = notesNotifier.addData(data);
           await Future.value(maybeFuture); // handles void or Future
           successCount++;
-          debugPrint(
-              '------------------------------ (#${i + 1}) Writing Success: ${data.title}');
         } catch (e, st) {
-          debugPrint(
-              '------------------------------ (#${i + 1}) Writing FAILED for ${data.title}: $e\n$st');
+          debugPrint('(#${i + 1}) Writing FAILED for ${data.title}: $e\n$st');
         }
       }
-
-      debugPrint(
-          'syncFirebaseToLocal finished: success=$successCount / total=${notes.length}');
     } catch (e, st) {
       debugPrint('syncFirebaseToLocal top-level error: $e\n$st');
     }
@@ -226,8 +216,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 setState(() {
                                   isLoading = true;
                                 });
-                                debugPrint(
-                                    "-----------------------password: ${_passController.text}, Email: ${_emailController.text}");
                                 await loginUser();
                               },
                         child: Text(

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:notes_app/provider/data_provider.dart';
+import 'package:notes_app/providers/notes_provider.dart';
 
 class NoteView extends ConsumerStatefulWidget {
   final String id;
@@ -64,7 +64,6 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
           widget.id,
           _titleController.text,
           _bodyController.text,
-          widget.filter,
           DateTime.now().microsecondsSinceEpoch);
       isChanged = false;
     }
@@ -81,7 +80,6 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
     final filtered = data.where((data) => data.id == widget.id);
 
     if (filtered.isEmpty) {
-      // Option A (safe): just show a simple message — do NOT call Navigator.pop here if your delete flow already pops.
       return Scaffold(
         backgroundColor: Colors.white,
         body: Center(child: CircularProgressIndicator()),
@@ -113,9 +111,7 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
               IconButton(
                   onPressed: () {
                     setState(() {
-                      ref
-                          .read(notesProivder.notifier)
-                          .updateStar(widget.id, widget.filter);
+                      ref.read(notesProivder.notifier).updateStar(widget.id);
                     });
                   },
                   icon: star.isStar == 0
@@ -155,7 +151,7 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
                                         // 2) perform delete
                                         await ref
                                             .read(notesProivder.notifier)
-                                            .deleteData(widget.id, null);
+                                            .deleteData(widget.id);
 
                                         // 3) then pop the NoteView (if still mounted)
                                         if (!context.mounted) return;
@@ -188,8 +184,6 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
                     controller: _titleController,
                     onChanged: (text) {
                       onTextChange();
-                      debugPrint(
-                          "---------------------------------TEXT ON CHANGE: $text");
                       isChanged = true;
                     },
                     decoration: InputDecoration(

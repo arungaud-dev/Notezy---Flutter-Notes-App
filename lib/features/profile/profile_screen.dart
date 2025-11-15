@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:notes_app/auth/auth_services/auth_service.dart';
+import 'package:notes_app/features/auth/auth_services/auth_service.dart';
 import 'package:notes_app/main.dart';
-import 'package:notes_app/provider/auth_state_provider.dart';
+import 'package:notes_app/providers/auth_state_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -37,11 +37,9 @@ class ProfileScreen extends ConsumerWidget {
                         text: "${user?.displayName}",
                         style: GoogleFonts.inter(fontWeight: FontWeight.normal))
                   ])),
-              // Text("Name: ${user?.displayName}"),
               SizedBox(
                 height: 8,
               ),
-              // Text("Email: ${user?.email}"),
               Text.rich(TextSpan(
                   text: "Email: ",
                   style: GoogleFonts.inter(
@@ -65,8 +63,6 @@ class ProfileScreen extends ConsumerWidget {
                     onPressed: () async {
                       await service.logout();
                       if (context.mounted) {
-                        // Navigator.pop(context);
-
                         Navigator.of(context).pushAndRemoveUntil(
                           MaterialPageRoute(builder: (_) => AuthGate()),
                           (route) => false,

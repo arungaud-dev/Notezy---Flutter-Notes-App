@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:notes_app/data/models/data_model.dart';
-import 'package:notes_app/provider/data_provider.dart';
+import 'package:notes_app/providers/notes_provider.dart';
 import 'package:intl/intl.dart';
 
 class NoteAddScreen extends StatefulWidget {
@@ -20,7 +20,7 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
   String? selected = "General";
   int isStar = 0;
 
-  //-------------------------------------------------------------
+  // DATE FORMATER-->>>>>>>>>>>>
   final _df = DateFormat('d MMM yyyy', 'en_US');
 
   String fmtDate(DateTime dt) => _df.format(dt.toLocal());
@@ -70,11 +70,7 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                         isStar: isStar,
                         isSynced: 0,
                         updatedAt: id);
-                    debugPrint(
-                        "-------------------------------------------------------------------THE ID IS: ${data.id}");
-                    await ref
-                        .read(notesProivder.notifier)
-                        .addData(data, widget.filter);
+                    await ref.read(notesProivder.notifier).addData(data);
                     _titleController.clear();
                     _bodyController.clear();
                   }

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notes_app/features/home/note_add_screen.dart';
 import 'package:notes_app/features/home/note_view.dart';
-import 'package:notes_app/features/home/profile_screen.dart';
-import 'package:notes_app/provider/category_provider.dart';
-import 'package:notes_app/provider/data_provider.dart';
-import 'package:notes_app/provider/fire_data_provider.dart';
+import 'package:notes_app/features/profile/profile_screen.dart';
+import 'package:notes_app/providers/category_provider.dart';
+import 'package:notes_app/providers/notes_provider.dart';
+import 'package:notes_app/providers/fire_data_provider.dart';
 import 'package:notes_app/widgets/note_card.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -17,7 +17,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  //--------------------------------------
   final categories = ["Personal", "School", "Work", "Company", "General"];
 
   @override
@@ -78,7 +77,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           )
         ],
       ),
-      //----------------------------------------------- BODY LAYOUTS --------->>
+      //----------------- BODY LAYOUTS --------->>
       backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
@@ -90,7 +89,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             SizedBox(
               height: 30,
-              //FILTER FEATURE  --------------->>>>>>>>>
+              //FILTER FEATURE  >>>>>>>>>
               child: Row(
                 children: [
                   Text("Filter "),
@@ -100,13 +99,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         borderRadius: BorderRadius.circular(8)),
                     color: Colors.white,
                     onSelected: (value) {
-                      // filter = value;
                       ref.read(categoryProvider.notifier).state = value;
-                      // ref.read(notesProivder.notifier).getData("H1");
                       ref.read(notesProivder.notifier).getDataForUi();
-                      //
-                      // print(
-                      //     "------------------------------------------------ Filter s: $filter");
                     },
                     icon: Icon(
                       Icons.filter_list,
@@ -123,7 +117,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ? GestureDetector(
                           onTap: () {
                             ref.read(categoryProvider.notifier).state = null;
-                            // ref.read(notesProivder.notifier).getData("H1");
                             ref.read(notesProivder.notifier).getDataForUi();
                           },
                           child: Container(
@@ -156,7 +149,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       : SizedBox()
                 ],
               ),
-              //--------------------------------------------------------------
             ),
             SizedBox(
               height: 10,
@@ -168,11 +160,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     )
                   : ListView.builder(
                       itemCount: data.length,
-                      // padding: EdgeInsets.symmetric(vertical: 5),
                       itemBuilder: (context, index) {
                         final note = data[index];
-                        // debugPrint(
-                        //     "---------------SQLITE DATABASE:${note.toMap()}");
                         return GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -194,11 +183,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             time: note.createdAt!,
                             category: note.category,
                             callback: () {
-                              // debugPrint(
-                              //     "----------------------------------------------FILTER IS: $filter");
                               ref
                                   .read(notesProivder.notifier)
-                                  .updateStar(note.id, filter);
+                                  .updateStar(note.id);
                             },
                           ),
                         );

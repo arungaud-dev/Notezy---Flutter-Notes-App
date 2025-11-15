@@ -2,14 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notes_app/data/models/data_model.dart';
-import 'package:notes_app/provider/auth_state_provider.dart';
+import 'package:notes_app/providers/auth_state_provider.dart';
 
 class FirebaseServices {
-  // final String? uid;
   final Ref ref;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // FirebaseServices({required this.uid, required this.ref});
   FirebaseServices(this.ref);
 
   Future<void> addDataInFire(DataModel data) async {
@@ -71,7 +69,7 @@ class FirebaseServices {
   }
 }
 
-// 1) Provider that exposes the service
+//  Provider that exposes the service
 final firebaseServicesProvider = Provider<FirebaseServices>((ref) {
   return FirebaseServices(ref);
 });

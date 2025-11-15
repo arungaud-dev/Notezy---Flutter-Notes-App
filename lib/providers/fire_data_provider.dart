@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notes_app/data/models/data_model.dart';
-import 'package:notes_app/provider/data_provider.dart';
+import 'package:notes_app/providers/notes_provider.dart';
 
 final fireDataProvider = StreamProvider((ref) async* {
   FirebaseFirestore.instance
@@ -17,11 +17,11 @@ final fireDataProvider = StreamProvider((ref) async* {
           final data = DataModel.fromMap(change.doc.data()!);
 
           if (change.type == DocumentChangeType.added) {
-            ref.read(notesProivder.notifier).addData(data, null);
+            ref.read(notesProivder.notifier).addData(data);
           } else if (change.type == DocumentChangeType.removed) {
-            ref.read(notesProivder.notifier).deleteData(data.id, null);
+            ref.read(notesProivder.notifier).deleteData(data.id);
           } else if (change.type == DocumentChangeType.modified) {
-            ref.read(notesProivder.notifier).addData(data, null);
+            ref.read(notesProivder.notifier).addData(data);
           }
         } catch (e) {
           print("Error processing document: $e");
