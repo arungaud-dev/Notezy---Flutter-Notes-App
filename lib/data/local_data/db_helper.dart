@@ -52,7 +52,7 @@ class DBHelper {
   Future<List<DataModel>> getData() async {
     final db = await database;
     try {
-      final data = await db.query(tableName);
+      final data = await db.query(tableName, orderBy: "$column4 DESC");
       return data.map((e) => DataModel.fromMap(e)).toList();
     } catch (e) {
       debugPrint("A ERROR ON DATA GETTING PLEASE CHECK DATABASE FILE");

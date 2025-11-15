@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notes_app/features/home/note_add_screen.dart';
 import 'package:notes_app/features/home/note_view.dart';
+import 'package:notes_app/features/home/profile_screen.dart';
+import 'package:notes_app/provider/category_provider.dart';
 import 'package:notes_app/provider/data_provider.dart';
 import 'package:notes_app/provider/fire_data_provider.dart';
 import 'package:notes_app/widgets/note_card.dart';
@@ -18,12 +20,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   //--------------------------------------
   final categories = ["Personal", "School", "Work", "Company", "General"];
 
-  String? filter;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    ref.read(notesProivder.notifier).getData("h1");
+  }
 
   @override
   Widget build(BuildContext context) {
+    final filter = ref.read(categoryProvider);
     final data = ref.watch(notesProivder);
-    ref.watch(dataProvider);
+    ref.watch(fireDataProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -46,17 +54,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       fontStyle: FontStyle.italic))
             ])),
         actions: [
-          Container(
-            padding: EdgeInsets.all(2),
-            decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  width: 1,
-                  color: Colors.green[700]!,
-                )),
-            child: Icon(
-              Icons.check_circle,
-              color: Colors.green[700],
+          GestureDetector(
+            onTap: () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => ProfileScreen()));
+            },
+            child: Container(
+              padding: EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    width: 1,
+                    color: Colors.green[700]!,
+                  )),
+              child: Icon(
+                Icons.check_circle,
+                color: Colors.green[700],
+              ),
             ),
           ),
           SizedBox(
@@ -86,8 +100,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         borderRadius: BorderRadius.circular(8)),
                     color: Colors.white,
                     onSelected: (value) {
-                      ref.read(notesProivder.notifier).getData(value);
-                      filter = value;
+                      // filter = value;
+                      ref.read(categoryProvider.notifier).state = value;
+                      // ref.read(notesProivder.notifier).getData("H1");
+                      ref.read(notesProivder.notifier).getDataForUi();
+                      //
+                      // print(
+                      //     "------------------------------------------------ Filter s: $filter");
                     },
                     icon: Icon(
                       Icons.filter_list,
@@ -103,8 +122,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   filter != null
                       ? GestureDetector(
                           onTap: () {
-                            ref.read(notesProivder.notifier).getData();
-                            filter = null;
+                            ref.read(categoryProvider.notifier).state = null;
+                            // ref.read(notesProivder.notifier).getData("H1");
+                            ref.read(notesProivder.notifier).getDataForUi();
                           },
                           child: Container(
                             padding: EdgeInsets.symmetric(
@@ -117,7 +137,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    filter!,
+                                    filter,
                                     style: TextStyle(color: Colors.green[700]),
                                   ),
                                   SizedBox(
@@ -151,8 +171,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       // padding: EdgeInsets.symmetric(vertical: 5),
                       itemBuilder: (context, index) {
                         final note = data[index];
-                        debugPrint(
-                            "---------------SQLITE DATABASE:${note.toMap()}");
+                        // debugPrint(
+                        //     "---------------SQLITE DATABASE:${note.toMap()}");
                         return GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -174,6 +194,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             time: note.createdAt!,
                             category: note.category,
                             callback: () {
+                              // debugPrint(
+                              //     "----------------------------------------------FILTER IS: $filter");
                               ref
                                   .read(notesProivder.notifier)
                                   .updateStar(note.id, filter);

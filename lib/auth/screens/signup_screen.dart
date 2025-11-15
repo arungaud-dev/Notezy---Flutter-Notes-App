@@ -1,20 +1,85 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:notes_app/auth/auth_services/auth_service.dart';
 import 'package:notes_app/auth/screens/login_screen.dart';
+import 'package:notes_app/features/home/home_screen.dart';
+import 'package:notes_app/provider/auth_state_provider.dart';
 import 'package:notes_app/widgets/custom_textfield.dart';
 
-class SignupScreen extends StatefulWidget {
+class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 
   @override
-  State<SignupScreen> createState() => _LoginScreenState();
+  ConsumerState<SignupScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<SignupScreen> {
+class _LoginScreenState extends ConsumerState<SignupScreen> {
+  bool isLoading = false;
+  final AuthService service = AuthService();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passController = TextEditingController();
+
+  Future<void> createUser() async {
+    try {
+      if (_emailController.text.isNotEmpty &&
+          _passController.text.isNotEmpty &&
+          _nameController.text.isNotEmpty) {
+        final message = await service.createUser(
+            _emailController.text, _passController.text, _nameController.text);
+        if (message != null && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              duration: Duration(seconds: 1),
+            ),
+          );
+        } else if (message == null && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Account created Successfully.',
+              ),
+              duration: Duration(seconds: 1),
+              backgroundColor: Colors.green[700],
+            ),
+          );
+
+          await FirebaseAuth.instance.currentUser?.reload();
+
+// 2) Force Riverpod to refresh the auth stream/provider
+          ref.refresh(authStateProvider);
+          if (mounted) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => HomeScreen()),
+              (route) => false,
+            );
+          }
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please Fill the all Fields'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +185,14 @@ class _LoginScreenState extends State<SignupScreen> {
                         style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green[700],
                             foregroundColor: Colors.white),
-                        onPressed: () {},
+                        onPressed: isLoading == true
+                            ? null
+                            : () async {
+                                setState(() {
+                                  isLoading = true;
+                                });
+                                await createUser();
+                              },
                         child: Text(
                           "SIGN UP",
                           style: GoogleFonts.inter(

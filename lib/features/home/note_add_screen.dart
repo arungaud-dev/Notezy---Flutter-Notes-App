@@ -160,6 +160,7 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                   ),
                   child: TextField(
                     decoration: InputDecoration(
+                        prefixIcon: Icon(Icons.category),
                         contentPadding: EdgeInsets.symmetric(vertical: 6),
                         border: InputBorder.none,
                         hintText: "Enter category name",

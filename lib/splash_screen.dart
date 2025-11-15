@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:notes_app/auth/screens/login_screen.dart';
 import 'package:notes_app/data/firebase_data/firebase_services.dart';
-import 'package:notes_app/features/home/home_screen.dart';
 import 'package:notes_app/provider/data_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -14,26 +12,21 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
-  final FirebaseServices services = FirebaseServices(uid: "example_user");
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(notesProivder.notifier).getData();
-    });
-
-    // TODO: implement initState
-
-    syncFirebaseToLocal();
-    Future.delayed(Duration(seconds: 1), () {
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => HomeScreen()));
+      if (mounted) {
+        ref.read(notesProivder.notifier).getData("sp");
+      }
     });
   }
 
   Future<void> syncFirebaseToLocal() async {
-    final notes = await services.getDataFromFire(0);
-    // debugPrint(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>DATA FOUND: ${notes}");
+    if (!mounted) return;
+    // final notes = await services.getDataFromFire(0);
+    final notes = await ref.read(firebaseServicesProvider).getDataFromFire(0);
+    debugPrint(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>DATA FOUND: $notes");
     if (notes.isEmpty) return;
 
     for (var data in notes) {

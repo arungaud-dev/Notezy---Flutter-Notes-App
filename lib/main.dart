@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
 import 'package:notes_app/auth/screens/login_screen.dart';
 import 'package:notes_app/auth/screens/signup_screen.dart';
-import 'package:flutter/services.dart';
 import 'package:notes_app/features/home/home_screen.dart';
+import 'package:notes_app/provider/auth_state_provider.dart';
 import 'package:notes_app/splash_screen.dart';
 
 void main() async {
@@ -25,11 +25,31 @@ class ThinkNote extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: SplashScreen(),
+      home: AuthGate(),
     );
-    // return MaterialApp.router(
-    //   debugShowCheckedModeBanner: false,
-    //   routerConfig: router,
-    // );
+  }
+}
+
+class AuthGate extends ConsumerWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authStateProvider);
+
+    return user.when(
+        data: (data) {
+          if (data != null) return HomeScreen();
+          return LoginScreen();
+        },
+        error: (error, _) {
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: Center(
+              child: Text("Error 404"),
+            ),
+          );
+        },
+        loading: () => SplashScreen());
   }
 }

@@ -3,33 +3,90 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notes_app/data/local_data/db_helper.dart';
 import 'package:notes_app/data/models/data_model.dart';
 import 'package:notes_app/data/sync_manager/sync_manager.dart';
-import 'package:notes_app/data/firebase_data/firebase_services.dart';
+import 'package:notes_app/provider/category_provider.dart';
 
 class DataNotifier extends StateNotifier<List<DataModel>> {
-  DataNotifier() : super([]);
+  final Ref ref;
+  late final SyncManager manager;
+
+  DataNotifier(this.ref) : super([]) {
+    manager = ref.read(syncManagerProvider); // initialize once
+  }
 
   static final DBHelper db = DBHelper.instance;
-  final SYNCManager manager = SYNCManager();
-  final FirebaseServices services = FirebaseServices(uid: "example_user");
+  static List<DataModel>? data;
 
-  Future<void> getData([String? filterName]) async {
-    final list = await db.getData();
-    if (filterName == null) {
-      state = list;
-    } else {
-      state = list.where((data) => data.category == filterName).toList();
+  Future<void> getDataForUi() async {
+    final filter = ref.read(categoryProvider);
+    if (data != null && filter != null) {
+      state = data!.where((data) => data.category == filter).toList();
+    } else if (data != null && filter == null) {
+      state = data!;
+    } else if (data == null && filter == null) {
+      getData("From Top");
     }
   }
 
-  Future<void> addData(DataModel data, String? filter) async {
-    await db.insertData(data);
-    getData(filter);
-    manager.syncLocalToFirebase();
+  Future<void> getData(String h1) async {
+    final notes = await db.getData();
+
+    data = notes;
+    getDataForUi();
+    debugPrint(
+        "----------------------------------------------------GET METHOD CALLED FROM: $h1");
   }
+
+  Future<void> addData(DataModel data, String? filter) async {
+    debugPrint(
+        '??????????????????????????????????DataNotifier.addData: ENTER -> ${data.title}');
+
+    try {
+      // 1) insert locally
+      debugPrint(
+          '?????????????????????????????????DataNotifier.addData: inserting locally -> ${data.title}');
+      await db.insertData(data);
+      debugPrint(
+          '??????????????????????????????????DataNotifier.addData: local insert done -> ${data.title}');
+
+      // 2) refresh local cache & UI (await so state updated)
+      await getData("add");
+      debugPrint(
+          '???????????????????????????????????DataNotifier.addData: getData finished -> state length=${state.length}');
+
+      // 3) fetch manager fresh from provider (avoid holding any widget Ref)
+      try {
+        final syncMgr = ref.read(syncManagerProvider);
+        debugPrint(
+            '??????????????????????????????????DataNotifier.addData: obtained syncManager -> $syncMgr');
+
+        // call the sync and await it; catch any error inside
+        final maybeFuture = syncMgr.syncLocalToFirebase();
+        await Future.value(maybeFuture);
+        debugPrint(
+            '????????????????????????????????DataNotifier.addData: manager.syncLocalToFirebase completed');
+      } catch (e, st) {
+        debugPrint(
+            'DataNotifier.addData: manager.syncLocalToFirebase FAILED: $e\n$st');
+      }
+
+      debugPrint(
+          '???????????????????????????????????DataNotifier.addData: EXIT success -> ${data.title}');
+    } catch (e, st) {
+      debugPrint(
+          '?????????????????????????????????DataNotifier.addData ERROR: $e\n$st');
+    }
+  }
+
+  // Future<void> addData(DataModel data, String? filter) async {
+  //   await db.insertData(data);
+  //   getData("add");
+  //   manager.syncLocalToFirebase();
+  // }
 
   Future<void> deleteData(String id, String? filter) async {
     await db.deleteData(id);
-    getData(filter);
+    getData("delete");
+    manager.deleteFromFire(id);
   }
 
   Future<void> updateData(
@@ -39,7 +96,7 @@ class DataNotifier extends StateNotifier<List<DataModel>> {
         id,
         data.copyWith(
             title: title, body: body, updatedAt: updated, isSynced: 0));
-    getData(filter);
+    getData("update");
     manager.syncLocalToFirebase();
   }
 
@@ -47,10 +104,10 @@ class DataNotifier extends StateNotifier<List<DataModel>> {
     final data = state.where((data) => data.id == id).first;
     final star = data.isStar == 0 ? 1 : 0;
     await db.updateData(id, data.copyWith(isStar: star, isSynced: 0));
-    await manager.syncLocalToFirebase();
-    getData(filter);
+    getData("update");
+    manager.syncLocalToFirebase();
   }
 }
 
 final notesProivder = StateNotifierProvider<DataNotifier, List<DataModel>>(
-    (ref) => DataNotifier());
+    (ref) => DataNotifier(ref));

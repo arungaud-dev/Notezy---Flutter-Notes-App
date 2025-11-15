@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notes_app/data/models/data_model.dart';
 import 'package:notes_app/provider/data_provider.dart';
 
-final dataProvider = StreamProvider((ref) async* {
+final fireDataProvider = StreamProvider((ref) async* {
   FirebaseFirestore.instance
       .collection("accounts")
       .doc("example_user")
@@ -13,6 +13,7 @@ final dataProvider = StreamProvider((ref) async* {
     (snapshot) {
       for (var change in snapshot.docChanges) {
         try {
+          if (change.doc.metadata.hasPendingWrites) continue;
           final data = DataModel.fromMap(change.doc.data()!);
 
           if (change.type == DocumentChangeType.added) {
