@@ -1,4 +1,4 @@
-class DataModel {
+class NoteModel {
   final String id;
   final String title;
   final String body;
@@ -8,7 +8,7 @@ class DataModel {
   final String category;
   final int isSynced;
 
-  DataModel(
+  NoteModel(
       {required this.id,
       required this.title,
       required this.body,
@@ -31,7 +31,7 @@ class DataModel {
     };
   }
 
-  DataModel copyWith(
+  NoteModel copyWith(
       {String? id,
       String? title,
       String? body,
@@ -40,7 +40,7 @@ class DataModel {
       int? isStar,
       String? category,
       int? isSynced}) {
-    return DataModel(
+    return NoteModel(
         id: id ?? this.id,
         title: title ?? this.title,
         body: body ?? this.body,
@@ -51,8 +51,8 @@ class DataModel {
         isSynced: isSynced ?? this.isSynced);
   }
 
-  factory DataModel.fromMap(Map<String, dynamic> map) {
-    return DataModel(
+  factory NoteModel.fromMap(Map<String, dynamic> map) {
+    return NoteModel(
         id: map["id"],
         title: map["title"],
         body: map["body"],

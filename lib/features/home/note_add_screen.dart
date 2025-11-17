@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:notes_app/data/models/data_model.dart';
+import 'package:notes_app/data/firestore_service/firebase_service.dart';
+import 'package:notes_app/data/models/category_model.dart';
+import 'package:notes_app/data/models/note_model.dart';
+import 'package:notes_app/providers/category_provider.dart';
 import 'package:notes_app/providers/notes_provider.dart';
 import 'package:intl/intl.dart';
 
-class NoteAddScreen extends StatefulWidget {
+class NoteAddScreen extends ConsumerStatefulWidget {
   final String? filter;
   const NoteAddScreen({super.key, required this.filter});
 
   @override
-  State<NoteAddScreen> createState() => _NoteAddScreenState();
+  ConsumerState<NoteAddScreen> createState() => _NoteAddScreenState();
 }
 
-class _NoteAddScreenState extends State<NoteAddScreen> {
-  final categories = ["Personal", "School", "Work", "Company", "General"];
+class _NoteAddScreenState extends ConsumerState<NoteAddScreen> {
+  // final categories = ["Personal", "School", "Work", "Company", "General"];
+  final _categoryController = TextEditingController();
   final _titleController = TextEditingController();
   final _bodyController = TextEditingController();
   String? selected = "General";
@@ -27,6 +31,8 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final List<CategoryModel> categories = ref.watch(categoryHandler);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -61,7 +67,7 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                   if (_titleController.text.isNotEmpty ||
                       _bodyController.text.isNotEmpty) {
                     final id = DateTime.now().microsecondsSinceEpoch;
-                    final data = DataModel(
+                    final data = NoteModel(
                         id: id.toString(),
                         title: _titleController.text,
                         body: _bodyController.text,
@@ -70,7 +76,7 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                         isStar: isStar,
                         isSynced: 0,
                         updatedAt: id);
-                    await ref.read(notesProivder.notifier).addData(data);
+                    await ref.read(notesProvider.notifier).addData(data);
                     _titleController.clear();
                     _bodyController.clear();
                   }
@@ -124,7 +130,8 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                 isExpanded: true,
                 // isDense: true,
                 items: categories
-                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .map((e) =>
+                        DropdownMenuItem(value: e.title, child: Text(e.title)))
                     .toList(),
                 onChanged: (value) {
                   setState(() {
@@ -133,6 +140,27 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                 },
                 dropdownColor: Colors.white,
               ),
+
+              // PopupMenuButton(
+              //   shape: RoundedRectangleBorder(
+              //       borderRadius: BorderRadius.circular(8)),
+              //   color: Colors.white,
+              //   onSelected: (value) {
+              //     ref.read(categoryProvider.notifier).state = value;
+              //     ref.read(notesProvider.notifier).getDataForUi();
+              //   },
+              //   icon: Icon(
+              //     Icons.filter_list,
+              //     color: Colors.black.withValues(alpha: 0.7),
+              //   ),
+              //   itemBuilder: (context) {
+              //     return categories
+              //         .map((data) => PopupMenuItem(
+              //         value: data.title,
+              //         child: Text(data.title)))
+              //         .toList();
+              //   },
+              // ),
             ),
             SizedBox(
               height: 15,
@@ -155,9 +183,10 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                     color: Colors.black.withValues(alpha: 0.06),
                   ),
                   child: TextField(
+                    controller: _categoryController,
                     decoration: InputDecoration(
                         prefixIcon: Icon(Icons.category),
-                        contentPadding: EdgeInsets.symmetric(vertical: 6),
+                        contentPadding: EdgeInsets.symmetric(vertical: 16),
                         border: InputBorder.none,
                         hintText: "Enter category name",
                         hintStyle: GoogleFonts.inter(
@@ -171,12 +200,23 @@ class _NoteAddScreenState extends State<NoteAddScreen> {
                 SizedBox(
                   height: 50,
                   width: 80,
-                  child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green[700],
-                          foregroundColor: Colors.white),
-                      onPressed: () {},
-                      child: Text("Add")),
+                  child: Consumer(builder: (context, ref, _) {
+                    return ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green[700],
+                            foregroundColor: Colors.white),
+                        onPressed: () {
+                          final data = CategoryModel(
+                              id: DateTime.now().microsecondsSinceEpoch,
+                              title: _categoryController.text);
+                          ref.read(categoryHandler.notifier).addCategory(data);
+                          ref
+                              .read(firebaseServicesProvider)
+                              .addCategoryInFire(data);
+                          _categoryController.clear();
+                        },
+                        child: Text("Add"));
+                  }),
                 )
               ],
             ),

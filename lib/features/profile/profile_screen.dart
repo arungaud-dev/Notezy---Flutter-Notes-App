@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:notes_app/features/auth/auth_services/auth_service.dart';
+import 'package:notes_app/features/auth/auth_service/auth_service.dart';
 import 'package:notes_app/main.dart';
 import 'package:notes_app/providers/auth_state_provider.dart';
 import 'package:google_fonts/google_fonts.dart';

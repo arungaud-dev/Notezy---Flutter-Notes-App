@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:notes_app/data/models/category_model.dart';
+import 'package:notes_app/providers/category_provider.dart';
 import 'package:notes_app/providers/notes_provider.dart';
 
 class NoteView extends ConsumerStatefulWidget {
@@ -60,11 +62,15 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
 
   Future<void> saveAuto() async {
     if (isChanged) {
-      await ref.read(notesProivder.notifier).updateData(
+      await ref.read(notesProvider.notifier).updateData(
           widget.id,
           _titleController.text,
           _bodyController.text,
-          DateTime.now().microsecondsSinceEpoch);
+          null,
+          DateTime.now().microsecondsSinceEpoch,
+          null,
+          null,
+          null);
       isChanged = false;
     }
   }
@@ -76,8 +82,9 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
 
   @override
   Widget build(BuildContext context) {
-    final data = ref.watch(notesProivder);
+    final data = ref.watch(notesProvider);
     final filtered = data.where((data) => data.id == widget.id);
+    final List<CategoryModel> categories = ref.watch(categoryHandler);
 
     if (filtered.isEmpty) {
       return Scaffold(
@@ -111,7 +118,7 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
               IconButton(
                   onPressed: () {
                     setState(() {
-                      ref.read(notesProivder.notifier).updateStar(widget.id);
+                      ref.read(notesProvider.notifier).updateStar(widget.id);
                     });
                   },
                   icon: star.isStar == 0
@@ -150,7 +157,7 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
 
                                         // 2) perform delete
                                         await ref
-                                            .read(notesProivder.notifier)
+                                            .read(notesProvider.notifier)
                                             .deleteData(widget.id);
 
                                         // 3) then pop the NoteView (if still mounted)
@@ -203,6 +210,7 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
                     Icon(
                       Icons.watch_later_outlined,
                       color: Colors.black.withValues(alpha: 0.5),
+                      size: 18,
                     ),
                     SizedBox(
                       width: 5,
@@ -211,7 +219,7 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
                       widget.time,
                       style: GoogleFonts.inter(
                           color: Colors.black.withValues(alpha: 0.5),
-                          fontSize: 16),
+                          fontSize: 14),
                     ),
                     SizedBox(
                       width: 15,
@@ -219,6 +227,7 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
                     Icon(
                       Icons.folder_open,
                       color: Colors.black.withValues(alpha: 0.5),
+                      size: 18,
                     ),
                     SizedBox(
                       width: 5,
@@ -227,7 +236,7 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
                       widget.category,
                       style: GoogleFonts.inter(
                           color: Colors.black.withValues(alpha: 0.5),
-                          fontSize: 16),
+                          fontSize: 14),
                     )
                   ],
                 ),
@@ -236,6 +245,11 @@ class _NoteAddScreenState extends ConsumerState<NoteView> {
                 ),
                 Expanded(
                   child: TextField(
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: Colors.black.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.normal,
+                    ),
                     onChanged: (text) {
                       onTextChange();
                       isChanged = true;

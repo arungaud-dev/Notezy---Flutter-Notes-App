@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
+import 'package:notes_app/data/models/category_model.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'package:notes_app/data/models/data_model.dart';
+import 'package:notes_app/data/models/note_model.dart';
 
 class DBHelper {
   static final DBHelper instance = DBHelper._internal();
@@ -32,12 +33,18 @@ class DBHelper {
       $column6 TEXT NOT NULL,
       $column7 INTEGER NOT NULL)
       """);
+
+      await db.execute("""
+      CREATE TABLE category(
+      id INTEGER PRIMARY KEY,
+      title TEXT NOT NULL)
+      """);
     });
     return db!;
   }
 
   //INSERT DATA
-  Future<void> insertData(DataModel data) async {
+  Future<void> insertData(NoteModel data) async {
     try {
       final db = await database;
       await db.insert(tableName, data.toMap(),
@@ -49,11 +56,11 @@ class DBHelper {
   }
 
 //GET DATA
-  Future<List<DataModel>> getData() async {
+  Future<List<NoteModel>> getData() async {
     final db = await database;
     try {
       final data = await db.query(tableName, orderBy: "$column4 DESC");
-      return data.map((e) => DataModel.fromMap(e)).toList();
+      return data.map((e) => NoteModel.fromMap(e)).toList();
     } catch (e) {
       debugPrint("A ERROR ON DATA GETTING PLEASE CHECK DATABASE FILE");
       return [];
@@ -70,7 +77,7 @@ class DBHelper {
     }
   }
 
-  Future<void> updateData(String id, DataModel data) async {
+  Future<void> updateData(String id, NoteModel data) async {
     final db = await database;
     try {
       await db.update(tableName, data.toMap(), where: "id=?", whereArgs: [id]);
@@ -79,12 +86,12 @@ class DBHelper {
     }
   }
 
-  Future<List<DataModel>> getUnSyncedData() async {
+  Future<List<NoteModel>> getUnSyncedData() async {
     final db = await database;
     try {
       final data =
           await db.query(tableName, where: "$column7=?", whereArgs: [0]);
-      return data.map((e) => DataModel.fromMap(e)).toList();
+      return data.map((e) => NoteModel.fromMap(e)).toList();
     } catch (e) {
       debugPrint("A ERROR ON DATA GETTING PLEASE CHECK DATABASE FILE");
       return [];
@@ -97,6 +104,37 @@ class DBHelper {
       await db.update(tableName, {column7: 1}, where: "id=?", whereArgs: [id]);
     } catch (e) {
       debugPrint("A ERROR IN DATA SYNCED MARKING PLEASE CHECK SQL FILE");
+    }
+  }
+
+//-------------------------------- CATEGORY FUNCTIONS ---------------------------
+
+  Future<void> addCategory(CategoryModel data) async {
+    final db = await database;
+    try {
+      await db.insert("category", data.toMap());
+    } catch (e) {
+      debugPrint("A ERROR ON CATEGORY ADD");
+    }
+  }
+
+  Future<void> removeCategory(int id) async {
+    final db = await database;
+    try {
+      await db.delete("category", where: "id=?", whereArgs: [id]);
+    } catch (e) {
+      debugPrint("A ERROR ON CATEGORY ADD");
+    }
+  }
+
+  Future<List<CategoryModel>> getCategory() async {
+    final db = await database;
+    try {
+      final data = await db.query("category");
+      return data.map((d) => CategoryModel.fromMap(d)).toList();
+    } catch (e) {
+      debugPrint("A ERROR ON GETTING CATEGORY");
+      return [];
     }
   }
 }

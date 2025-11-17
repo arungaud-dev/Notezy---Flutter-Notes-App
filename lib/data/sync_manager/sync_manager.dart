@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notes_app/data/local_data/db_helper.dart';
-import 'package:notes_app/data/firestore_data/firebase_services.dart';
+import 'package:notes_app/data/firestore_service/firebase_service.dart';
 
 class SyncManager {
   final DBHelper dbHelper;

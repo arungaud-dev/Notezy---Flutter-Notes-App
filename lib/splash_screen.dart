@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:notes_app/data/firestore_data/firebase_services.dart';
+import 'package:notes_app/data/firestore_service/firebase_service.dart';
 import 'package:notes_app/providers/notes_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -17,22 +17,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(notesProivder.notifier).getData("sp");
+        ref.read(notesProvider.notifier).getData("splash");
       }
     });
   }
 
   Future<void> syncFirebaseToLocal() async {
     if (!mounted) return;
-    // final notes = await services.getDataFromFire(0);
     final notes = await ref.read(firebaseServicesProvider).getDataFromFire(0);
     debugPrint(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>DATA FOUND: $notes");
     if (notes.isEmpty) return;
 
     for (var data in notes) {
-      // debugPrint("------------FROM FIREBASE: ${data.toMap()}");
-      // await dbHelper.insertData(data);
-      ref.read(notesProivder.notifier).addData(data);
+      ref.read(notesProvider.notifier).addData(data);
     }
   }
 
@@ -56,7 +53,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               height: 30,
             ),
             Text(
-              "ThinkNote",
+              "Notezy",
               style:
                   GoogleFonts.inter(fontStyle: FontStyle.italic, fontSize: 20),
             ),

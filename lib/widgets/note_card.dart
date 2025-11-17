@@ -68,7 +68,7 @@ class NoteCard extends StatelessWidget {
             ],
           ),
           SizedBox(
-            height: 10,
+            height: 8,
           ),
           Text(
             body,

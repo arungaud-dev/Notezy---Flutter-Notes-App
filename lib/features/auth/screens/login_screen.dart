@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:notes_app/features/auth/auth_services/auth_service.dart';
+import 'package:notes_app/features/auth/auth_service/auth_service.dart';
 import 'package:notes_app/features/auth/screens/signup_screen.dart';
-import 'package:notes_app/data/firestore_data/firebase_services.dart';
+import 'package:notes_app/data/firestore_service/firebase_service.dart';
+import 'package:notes_app/providers/category_provider.dart';
 import 'package:notes_app/providers/notes_provider.dart';
 import 'package:notes_app/widgets/custom_textfield.dart';
 
@@ -22,7 +23,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passController = TextEditingController();
 
-// inside _LoginScreenState
   Future<void> loginUser() async {
     if (_emailController.text.trim().isEmpty ||
         _passController.text.trim().isEmpty) {
@@ -39,7 +39,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       // Capture providers-backed objects BEFORE doing async login (safe)
       final firebaseService = ref.read(firebaseServicesProvider);
-      final notesNotifier = ref.read(notesProivder.notifier);
+      final notesNotifier = ref.read(notesProvider.notifier);
+      final category = ref.read(categoryHandler.notifier);
 
       // 1) perform login
       final loginMsg = await service.loginUser(
@@ -66,6 +67,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       // 3) now sync using captured services (safe even if widget disposes afterward)
       await syncFirebaseToLocal(firebaseService, notesNotifier);
+      await syncCategoryFireToLocal(firebaseService, category);
     } catch (e, st) {
       debugPrint('loginUser error: $e\n$st');
       if (mounted) {
@@ -100,16 +102,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         return;
       }
 
-      int successCount = 0;
       for (var i = 0; i < notes.length; i++) {
         final data = notes[i];
         try {
           // call notifier (notifier was captured earlier)
           final maybeFuture = notesNotifier.addData(data);
           await Future.value(maybeFuture); // handles void or Future
-          successCount++;
         } catch (e, st) {
           debugPrint('(#${i + 1}) Writing FAILED for ${data.title}: $e\n$st');
+        }
+      }
+    } catch (e, st) {
+      debugPrint('syncFirebaseToLocal top-level error: $e\n$st');
+    }
+  }
+
+  //->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  Future<void> syncCategoryFireToLocal(
+      FirebaseServices firebaseService, CategoryNotifier category) async {
+    try {
+      // use FirebaseAuth directly to log uid (safe)
+      final firebaseUid = FirebaseAuth.instance.currentUser?.uid;
+      debugPrint('syncFirebaseToLocal: firebaseUid=$firebaseUid');
+
+      // Use the captured firebaseService (not ref.read inside here)
+      final categories = await firebaseService.getCategoryFromFire();
+
+      if (categories.isEmpty) {
+        debugPrint('syncFirebaseToLocal: no categories to sync');
+        return;
+      }
+
+      for (var i = 0; i < categories.length; i++) {
+        final data = categories[i];
+        try {
+          // call notifier (notifier was captured earlier)
+          final maybeFuture = category.addCategory(data);
+          await Future.value(maybeFuture); // handles void or Future
+        } catch (e, st) {
+          debugPrint(
+              '(#${i + 1}) CATEGORY Writing FAILED for ${data.title}: $e\n$st');
         }
       }
     } catch (e, st) {

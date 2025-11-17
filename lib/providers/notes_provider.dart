@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notes_app/data/local_data/db_helper.dart';
-import 'package:notes_app/data/models/data_model.dart';
+import 'package:notes_app/data/models/note_model.dart';
 import 'package:notes_app/data/sync_manager/sync_manager.dart';
 import 'package:notes_app/providers/category_provider.dart';
 
-class DataNotifier extends StateNotifier<List<DataModel>> {
+class DataNotifier extends StateNotifier<List<NoteModel>> {
   final Ref ref;
   late final SyncManager manager;
 
@@ -14,7 +14,7 @@ class DataNotifier extends StateNotifier<List<DataModel>> {
   }
 
   static final DBHelper db = DBHelper.instance;
-  static List<DataModel>? data;
+  static List<NoteModel>? data;
 
   Future<void> getDataForUi() async {
     final filter = ref.read(categoryProvider);
@@ -32,15 +32,13 @@ class DataNotifier extends StateNotifier<List<DataModel>> {
 
     data = notes;
     getDataForUi();
+    ref.read(isLoadingProvider.notifier).state = false;
   }
 
-  Future<void> addData(DataModel data) async {
+  Future<void> addData(NoteModel data) async {
     try {
-      // 1 insert locally
       await db.insertData(data);
-      // 2 refresh local cache & UI
       await getData("add");
-      // 3 fetch manager fresh from providers
       try {
         final syncMgr = ref.read(syncManagerProvider);
         // call the sync and await it; catch any error inside
@@ -62,12 +60,25 @@ class DataNotifier extends StateNotifier<List<DataModel>> {
   }
 
   Future<void> updateData(
-      String id, String title, String body, int updated) async {
+      String id,
+      String? title,
+      String? body,
+      String? createdAt,
+      int? updatedAt,
+      int? isStar,
+      String? category,
+      int? isSynced) async {
     final data = state.where((data) => data.id == id).first;
     await db.updateData(
         id,
         data.copyWith(
-            title: title, body: body, updatedAt: updated, isSynced: 0));
+            title: title,
+            body: body,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            isStar: isStar,
+            category: category,
+            isSynced: isSynced));
     getData("update");
     manager.syncLocalToFirebase();
   }
@@ -81,5 +92,7 @@ class DataNotifier extends StateNotifier<List<DataModel>> {
   }
 }
 
-final notesProivder = StateNotifierProvider<DataNotifier, List<DataModel>>(
+final notesProvider = StateNotifierProvider<DataNotifier, List<NoteModel>>(
     (ref) => DataNotifier(ref));
+
+final isLoadingProvider = StateProvider<bool>((ref) => true);
