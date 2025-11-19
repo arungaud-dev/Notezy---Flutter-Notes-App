@@ -117,7 +117,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  //->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   Future<void> syncCategoryFireToLocal(
       FirebaseServices firebaseService, CategoryNotifier category) async {
     try {

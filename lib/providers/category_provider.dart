@@ -72,28 +72,3 @@ class CategoryNotifier extends StateNotifier<List<String>> {
 final categoryHandler = StateNotifierProvider<CategoryNotifier, List<String>>(
   (ref) => CategoryNotifier(),
 );
-
-//------------------------------------------------------------------------------
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:notes_app/data/local_data/db_helper.dart';
-//
-// final categoryProvider = StateProvider<String?>((ref) => null);
-//
-// class CategoryNotifier extends StateNotifier<List<String>> {
-//   final List<String> defaultData = ["General", "Personal", "School"];
-//   final DBHelper db = DBHelper.instance;
-//   CategoryNotifier() : super(["General", "Personal", "School"]);
-//
-//   Future<void> getCategory() async {
-//     final data = await db.getCategory();
-//     state = [...defaultData, ...data];
-//   }
-//
-//   Future<void> addCategory(String title) async {
-//     await db.addCategory(title);
-//     await getCategory();
-//   }
-// }
-//
-// final categoryHandler = StateNotifierProvider<CategoryNotifier, List<String>>(
-//     (ref) => CategoryNotifier());

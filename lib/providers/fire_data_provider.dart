@@ -54,10 +54,7 @@ final fireDataProvider = Provider.autoDispose<
           }
         }
       },
-      onError: (err, stack) {
-        // Optional: report to Sentry / logging provider
-        // print('Firestore notes stream error: $err');
-      },
+      onError: (err, stack) {},
     );
 
     ref.onDispose(() {
@@ -67,58 +64,3 @@ final fireDataProvider = Provider.autoDispose<
     return sub;
   },
 );
-
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:notes_app/data/models/note_model.dart';
-// import 'package:notes_app/providers/auth_state_provider.dart';
-// import 'package:notes_app/providers/notes_provider.dart';
-//
-// final fireDataProvider = Provider.autoDispose((ref) {
-//   final uid = ref.watch(uidProvider);
-//   if (uid == null) {
-//     return;
-//   }
-//   final sub = FirebaseFirestore.instance
-//       .collection('accounts')
-//       .doc(uid)
-//       .collection('notes')
-//       .snapshots()
-//       .listen((snap) {
-//     for (final change in snap.docChanges) {
-//       if (change.doc.metadata.hasPendingWrites) continue;
-//
-//       final map = Map<String, dynamic>.from(change.doc.data() ?? {});
-//
-//       map['id'] = map['id'] ?? change.doc.id;
-//
-//       final data = NoteModel.fromMap(map);
-//
-//       final notifier = ref.read(notesProvider.notifier);
-//
-//       switch (change.type) {
-//         case DocumentChangeType.added:
-//           notifier.addData(data);
-//           break;
-//
-//         case DocumentChangeType.modified:
-//           notifier.updateData(
-//             data.id,
-//             data.title,
-//             data.body,
-//             data.createdAt,
-//             data.updatedAt,
-//             data.isStar,
-//             data.category,
-//             data.isSynced,
-//           );
-//           break;
-//
-//         case DocumentChangeType.removed:
-//           notifier.deleteData(data.id);
-//           break;
-//       }
-//     }
-//   });
-//   ref.onDispose(() => sub.cancel());
-// });
