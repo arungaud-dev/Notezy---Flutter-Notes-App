@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:notes_app/data/models/category_model.dart';
 import 'package:notes_app/data/models/note_model.dart';
 import 'package:notes_app/providers/auth_state_provider.dart';
 
@@ -71,20 +70,22 @@ class FirebaseServices {
 
   //------------------------------------- CATEGORY FUNCTIONS -------------------
 
-  Future<void> addCategoryInFire(CategoryModel data) async {
+  Future<void> addCategoryInFire(String title) async {
     final uid = ref.watch(uidProvider);
     try {
       await _firestore
           .collection("accounts")
           .doc(uid)
           .collection("category")
-          .add(data.toMap());
+          .doc(title)
+          .set({"title": title});
+      // .add({"title": title});
     } catch (e) {
       debugPrint("A ERROR ON CATEGORY ADD");
     }
   }
 
-  Future<List<CategoryModel>> getCategoryFromFire() async {
+  Future<List<String>> getCategoryFromFire() async {
     final uid = ref.watch(uidProvider);
     try {
       final notes = await _firestore
@@ -94,9 +95,7 @@ class FirebaseServices {
           .get();
       final docs = notes.docs;
 
-      return docs
-          .map((data) => CategoryModel(id: data["id"], title: data["title"]))
-          .toList();
+      return docs.map<String>((data) => data["title"]).toList();
     } catch (e) {
       debugPrint("A ERROR ON CATEGORY GET FROM FIREBASE: ${e.toString()}");
       return [];

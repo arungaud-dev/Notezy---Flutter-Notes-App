@@ -105,7 +105,7 @@ class _LoginScreenState extends ConsumerState<SignupScreen> {
                     height: 166,
                     width: 216,
                     child: Image.asset(
-                      "assets/images/pencil.png",
+                      "assets/images/pencil.jpeg",
                       fit: BoxFit.cover,
                     ),
                   ),

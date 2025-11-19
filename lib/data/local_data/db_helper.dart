@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:notes_app/data/models/category_model.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:notes_app/data/models/note_model.dart';
@@ -36,8 +35,7 @@ class DBHelper {
 
       await db.execute("""
       CREATE TABLE category(
-      id INTEGER PRIMARY KEY,
-      title TEXT NOT NULL)
+      title TEXT PRIMARY KEY)
       """);
     });
     return db!;
@@ -109,10 +107,10 @@ class DBHelper {
 
 //-------------------------------- CATEGORY FUNCTIONS ---------------------------
 
-  Future<void> addCategory(CategoryModel data) async {
+  Future<void> addCategory(String title) async {
     final db = await database;
     try {
-      await db.insert("category", data.toMap());
+      await db.insert("category", {"title": title});
     } catch (e) {
       debugPrint("A ERROR ON CATEGORY ADD");
     }
@@ -127,13 +125,13 @@ class DBHelper {
     }
   }
 
-  Future<List<CategoryModel>> getCategory() async {
+  Future<List<String>> getCategory() async {
     final db = await database;
     try {
       final data = await db.query("category");
-      return data.map((d) => CategoryModel.fromMap(d)).toList();
+      return data.map((d) => d["title"] as String).toList();
     } catch (e) {
-      debugPrint("A ERROR ON GETTING CATEGORY");
+      debugPrint("A ERROR ON GETTING CATEGORY: $e");
       return [];
     }
   }

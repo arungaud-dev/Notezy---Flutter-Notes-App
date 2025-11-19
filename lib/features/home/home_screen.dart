@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notes_app/data/firestore_service/firebase_service.dart';
-import 'package:notes_app/data/models/category_model.dart';
 import 'package:notes_app/features/home/note_add_screen.dart';
 import 'package:notes_app/features/home/note_view_screen.dart';
 import 'package:notes_app/features/profile/profile_screen.dart';
@@ -22,7 +21,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    ref.read(notesProvider.notifier).getData("h1");
     ref.read(categoryHandler.notifier).getCategory();
     syncCategoryFireToLocal();
   }
@@ -31,11 +29,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final firebaseService = ref.read(firebaseServicesProvider);
     final category = ref.read(categoryHandler.notifier);
     try {
-      // use FirebaseAuth directly to log uid (safe)
-      // final firebaseUid = FirebaseAuth.instance.currentUser?.uid;
-      // debugPrint('syncFirebaseToLocal: firebaseUid=$firebaseUid');
-
-      // Use the captured firebaseService (not ref.read inside here)
       final categories = await firebaseService.getCategoryFromFire();
 
       if (categories.isEmpty) {
@@ -46,12 +39,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       for (var i = 0; i < categories.length; i++) {
         final data = categories[i];
         try {
-          // call notifier (notifier was captured earlier)
           final maybeFuture = category.addCategory(data);
-          await Future.value(maybeFuture); // handles void or Future
-        } catch (e, st) {
-          debugPrint(
-              '(#${i + 1}) CATEGORY Writing FAILED for ${data.title}: $e\n$st');
+          await Future.value(maybeFuture);
+        } catch (e, _) {
+          debugPrint('(#${i + 1}) CATEGORY Writing FAILED ERROR');
         }
       }
     } catch (e, st) {
@@ -61,196 +52,328 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filter = ref.read(categoryProvider);
+    final filter = ref.watch(selectedCategoryProvider);
     final data = ref.watch(notesProvider);
     ref.watch(fireDataProvider);
-    final List<CategoryModel> categories = ref.watch(categoryHandler);
-    final isLoading = ref.watch(isLoadingProvider);
+    final List<String> categories = ref.watch(categoryHandler);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        elevation: 0,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        title: Text.rich(TextSpan(
-            text: "Notezy",
-            style: GoogleFonts.inter(
-                fontSize: 30,
-                color: Colors.green[700],
-                fontWeight: FontWeight.bold),
-            children: [
-              TextSpan(
-                  text: " Notes",
-                  style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black,
-                      fontStyle: FontStyle.italic))
-            ])),
+        toolbarHeight: 64,
+        titleSpacing: 20,
+        title: Text(
+          "Notes",
+          style: GoogleFonts.inter(
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF1A1A1A),
+            letterSpacing: -0.5,
+          ),
+        ),
         actions: [
-          GestureDetector(
-            onTap: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => ProfileScreen()));
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProfileScreen()),
+              );
             },
-            child: Container(
-              padding: EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    width: 1,
-                    color: Colors.green[700]!,
-                  )),
-              child: Icon(
-                Icons.check_circle,
-                color: Colors.green[700],
-              ),
+            icon: const Icon(
+              Icons.person_outline,
+              color: Color(0xFF666666),
+              size: 24,
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            style: IconButton.styleFrom(
+              minimumSize: const Size(40, 40),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
-          SizedBox(
-            width: 18,
-          )
+          const SizedBox(width: 20),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: const Color(0xFFE8E8E8),
+          ),
+        ),
       ),
-      //----------------- BODY LAYOUTS --------->>
-      backgroundColor: Colors.white,
-      body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-          child: isLoading == false
-              ? Column(
+      body: data.when(
+        data: (data) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Filter Section
+            if (categories.isNotEmpty)
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                child: Row(
                   children: [
-                    Divider(),
-                    SizedBox(
-                      height: 5,
-                    ),
-                    SizedBox(
-                      height: 30,
-                      //FILTER FEATURE  >>>>>>>>>
-                      child: Row(
-                        children: [
-                          Text(
-                            "Filter ",
-                            style: GoogleFonts.inter(fontSize: 16),
-                          ),
-                          PopupMenuButton(
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                            color: Colors.white,
-                            onSelected: (value) {
-                              ref.read(categoryProvider.notifier).state = value;
-                              ref.read(notesProvider.notifier).getDataForUi();
-                            },
-                            icon: Icon(
-                              Icons.filter_list,
-                              color: Colors.black.withValues(alpha: 0.7),
-                            ),
-                            itemBuilder: (context) {
-                              return categories
-                                  .map((data) => PopupMenuItem(
-                                      value: data.title,
-                                      child: Text(data.title)))
-                                  .toList();
-                            },
-                          ),
-                          filter != null
-                              ? GestureDetector(
-                                  onTap: () {
-                                    ref.read(categoryProvider.notifier).state =
-                                        null;
-                                    ref
-                                        .read(notesProvider.notifier)
-                                        .getDataForUi();
-                                  },
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(22),
-                                        color: Colors.green
-                                            .withValues(alpha: 0.05)),
-                                    child: Center(
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            filter,
-                                            style: TextStyle(
-                                                color: Colors.green[700]),
-                                          ),
-                                          SizedBox(
-                                            width: 4,
-                                          ),
-                                          Icon(
-                                            Icons.clear,
-                                            color: Colors.green[700],
-                                            size: 18,
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : SizedBox()
-                        ],
+                    Text(
+                      "Filter by",
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF666666),
                       ),
                     ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Expanded(
-                      child: data.isEmpty
-                          ? Center(
-                              child: Text("Data is empty"),
-                            )
-                          : ListView.builder(
-                              itemCount: data.length,
-                              itemBuilder: (context, index) {
-                                final note = data[index];
-                                return GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => NoteView(
-                                                  id: note.id,
-                                                  title: note.title,
-                                                  body: note.body,
-                                                  time: note.createdAt!,
-                                                  category: note.category,
-                                                  filter: filter,
-                                                )));
-                                  },
-                                  child: NoteCard(
-                                    title: note.title,
-                                    body: note.body,
-                                    isStar: note.isStar == 1,
-                                    time: note.createdAt!,
-                                    category: note.category,
-                                    callback: () {
-                                      ref
-                                          .read(notesProvider.notifier)
-                                          .updateStar(note.id);
-                                    },
-                                  ),
-                                );
+                    const SizedBox(width: 12),
+                    Container(
+                      height: 36,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFFE0E0E0),
+                        ),
+                      ),
+                      child: PopupMenuButton<String>(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: const BorderSide(
+                            color: Color(0xFFE0E0E0),
+                          ),
+                        ),
+                        color: Colors.white,
+                        elevation: 2,
+                        offset: const Offset(0, 8),
+                        onSelected: (value) {
+                          ref.read(selectedCategoryProvider.notifier).state =
+                              value;
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              filter ?? "All Notes",
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF1A1A1A),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.keyboard_arrow_down,
+                              size: 18,
+                              color: Color(0xFF666666),
+                            ),
+                          ],
+                        ),
+                        itemBuilder: (context) {
+                          return [
+                            PopupMenuItem(
+                              value: null,
+                              child: Text(
+                                "All Notes",
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: filter == null
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                  color: const Color(0xFF1A1A1A),
+                                ),
+                              ),
+                              onTap: () {
+                                Future.delayed(Duration.zero, () {
+                                  ref
+                                      .read(selectedCategoryProvider.notifier)
+                                      .state = null;
+                                });
                               },
                             ),
+                            ...categories.map((data) {
+                              return PopupMenuItem(
+                                value: data,
+                                child: Text(
+                                  data,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: filter == data
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                    color: const Color(0xFF1A1A1A),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ];
+                        },
+                      ),
                     ),
                   ],
-                )
-              : Center(
-                  child: CircularProgressIndicator(),
-                )),
+                ),
+              ),
+
+            // Divider
+            Container(
+              height: 1,
+              color: const Color(0xFFE8E8E8),
+            ),
+
+            // Notes Count
+            if (data.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                child: Text(
+                  "${data.length} ${data.length == 1 ? 'Note' : 'Notes'}",
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF999999),
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+
+            // Notes List
+            Expanded(
+              child: data.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                      itemCount: data.length,
+                      itemBuilder: (context, index) {
+                        final note = data[index];
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NoteView(
+                                  id: note.id,
+                                  title: note.title,
+                                  body: note.body,
+                                  time: note.createdAt!,
+                                  category: note.category,
+                                  filter: filter,
+                                ),
+                              ),
+                            );
+                          },
+                          child: NoteCard(
+                            title: note.title,
+                            body: note.body,
+                            isStar: note.isStar == 1,
+                            time: note.createdAt!,
+                            category: note.category,
+                            callback: () {
+                              ref
+                                  .read(notesProvider.notifier)
+                                  .updateStar(note.id);
+                            },
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+        error: (err, _) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 72,
+                color: Color(0xFFD1D1D1),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "Something went wrong",
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF666666),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                err.toString(),
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: const Color(0xFF999999),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  // Retry - provider ko invalidate karo
+                  ref.invalidate(notesProvider);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A1A1A),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Color(0xFF1A1A1A),
+          ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => NoteAddScreen(
-                        filter: filter,
-                      )));
+            context,
+            MaterialPageRoute(
+              builder: (context) => NoteAddScreen(filter: filter),
+            ),
+          );
         },
-        child: Icon(Icons.add),
+        backgroundColor: const Color(0xFF1A1A1A),
+        foregroundColor: Colors.white,
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(Icons.add, size: 28),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.description_outlined,
+            size: 72,
+            color: const Color(0xFFD1D1D1),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "No notes",
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF666666),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Create your first note",
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xFF999999),
+            ),
+          ),
+        ],
       ),
     );
   }

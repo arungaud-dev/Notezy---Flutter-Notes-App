@@ -1,34 +1,99 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notes_app/data/local_data/db_helper.dart';
-import 'package:notes_app/data/models/category_model.dart';
 
-final categoryProvider = StateProvider<String?>((ref) => null);
+final selectedCategoryProvider = StateProvider<String?>((ref) => null);
 
-class CategoryNotifier extends StateNotifier<List<CategoryModel>> {
-  final List<CategoryModel> defaultData = [
-    CategoryModel(id: 0, title: "General"),
-    CategoryModel(id: 1, title: "Personal"),
-    CategoryModel(id: 2, title: "School")
+// Make DB dependency injectable for testing. Also keep default categories const.
+class CategoryNotifier extends StateNotifier<List<String>> {
+  static const List<String> _defaultCategories = [
+    "General",
+    "Personal",
+    "School",
   ];
-  final DBHelper db = DBHelper.instance;
-  CategoryNotifier()
-      : super([
-          CategoryModel(id: 0, title: "General"),
-          CategoryModel(id: 1, title: "Personal"),
-          CategoryModel(id: 2, title: "School")
-        ]);
 
+  final DBHelper _db;
+
+  // Accept optional DB helper for easier testing; default to the singleton.
+  CategoryNotifier({DBHelper? db})
+      : _db = db ?? DBHelper.instance,
+        super(List.unmodifiable(_defaultCategories));
+
+  /// Fetch categories from DB and merge with defaults (without duplicates).
   Future<void> getCategory() async {
-    final data = await db.getCategory();
-    state = [...defaultData, ...data];
+    try {
+      final data = await _db.getCategory(); // assume returns List<String>
+      // Merge preserving order and avoiding duplicates (case-insensitive).
+      final merged = <String>[];
+      for (var c in _defaultCategories) {
+        merged.add(c);
+      }
+      for (var item in data) {
+        final exists = merged.any((m) => m.toLowerCase() == item.toLowerCase());
+        if (!exists) merged.add(item);
+      }
+      // Make state unmodifiable to prevent outside mutation.
+      state = List.unmodifiable(merged);
+    } catch (e, _) {
+      // Log or rethrow as needed — for now we rethrow to let UI decide.
+      // You could also expose an error state via another provider.
+      // print('getCategory failed: $e\n$st');
+      rethrow;
+    }
   }
 
-  Future<void> addCategory(CategoryModel data) async {
-    await db.addCategory(data);
-    await getCategory();
+  /// Adds a category if valid and not duplicate.
+  /// Returns true if added, false if it was duplicate/invalid.
+  Future<bool> addCategory(String title) async {
+    final trimmed = title.trim();
+    if (trimmed.isEmpty) return false;
+
+    final alreadyExists =
+        state.any((c) => c.toLowerCase() == trimmed.toLowerCase());
+    if (alreadyExists) return false;
+
+    // Optimistic update: update local state first, then persist.
+    final newList = [...state, trimmed];
+    state = List.unmodifiable(newList);
+
+    try {
+      await _db.addCategory(trimmed);
+      return true;
+    } catch (e) {
+      // Rollback on error
+      state = List.unmodifiable(state
+          .where((c) => c.toLowerCase() != trimmed.toLowerCase())
+          .toList());
+      rethrow;
+    }
   }
 }
 
-final categoryHandler =
-    StateNotifierProvider<CategoryNotifier, List<CategoryModel>>(
-        (ref) => CategoryNotifier());
+// Provider with optional override for testing.
+final categoryHandler = StateNotifierProvider<CategoryNotifier, List<String>>(
+  (ref) => CategoryNotifier(),
+);
+
+//------------------------------------------------------------------------------
+// import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:notes_app/data/local_data/db_helper.dart';
+//
+// final categoryProvider = StateProvider<String?>((ref) => null);
+//
+// class CategoryNotifier extends StateNotifier<List<String>> {
+//   final List<String> defaultData = ["General", "Personal", "School"];
+//   final DBHelper db = DBHelper.instance;
+//   CategoryNotifier() : super(["General", "Personal", "School"]);
+//
+//   Future<void> getCategory() async {
+//     final data = await db.getCategory();
+//     state = [...defaultData, ...data];
+//   }
+//
+//   Future<void> addCategory(String title) async {
+//     await db.addCategory(title);
+//     await getCategory();
+//   }
+// }
+//
+// final categoryHandler = StateNotifierProvider<CategoryNotifier, List<String>>(
+//     (ref) => CategoryNotifier());

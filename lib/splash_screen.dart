@@ -17,7 +17,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(notesProvider.notifier).getData("splash");
+        ref.read(notesProvider);
       }
     });
   }
@@ -45,7 +45,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               height: 166,
               width: 216,
               child: Image.asset(
-                "assets/images/logo.png",
+                "assets/images/logo.jpeg",
                 fit: BoxFit.cover,
               ),
             ),

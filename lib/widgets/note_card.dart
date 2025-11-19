@@ -9,119 +9,373 @@ class NoteCard extends StatelessWidget {
   final String category;
   final VoidCallback callback;
 
-  const NoteCard(
-      {super.key,
-      required this.title,
-      required this.body,
-      required this.isStar,
-      required this.time,
-      required this.category,
-      required this.callback});
+  const NoteCard({
+    super.key,
+    required this.title,
+    required this.body,
+    required this.isStar,
+    required this.time,
+    required this.category,
+    required this.callback,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final cat = {
-      "Personal": {"color": Colors.green[700], "background": Colors.green},
-      "School": {"color": Colors.pink[700], "background": Colors.pink},
-      "Work": {
-        "color": Colors.deepPurple[700],
-        "background": Colors.deepPurple
+    // Predefined category styles
+    final Map<String, Map<String, Color>> cat = {
+      "Personal": {
+        "color": const Color(0xFF10B981),
+        "light": const Color(0xFFECFDF5),
       },
-      "Company": {"color": Colors.yellow[700], "background": Colors.yellow},
-      "General": {"color": Colors.blue[700], "background": Colors.blue},
+      "School": {
+        "color": const Color(0xFFEC4899),
+        "light": const Color(0xFFFDF2F8),
+      },
+      "Work": {
+        "color": const Color(0xFF8B5CF6),
+        "light": const Color(0xFFF5F3FF),
+      },
+      "Company": {
+        "color": const Color(0xFFF59E0B),
+        "light": const Color(0xFFFEF3C7),
+      },
+      "General": {
+        "color": const Color(0xFF3B82F6),
+        "light": const Color(0xFFEFF6FF),
+      },
     };
 
+    // Default/fallback colors for unknown categories
+    final Map<String, Color> defaultColors = {
+      "color": const Color(0xFF6B7280),
+      "light": const Color(0xFFE5E7EB),
+    };
+
+    // Normalize incoming category (trim + case-insensitive match)
+    final normalized = category.trim();
+    Map<String, Color>? categoryData = cat[normalized];
+
+    if (categoryData == null) {
+      // case-insensitive search
+      final foundKey = cat.keys.firstWhere(
+        (k) => k.toLowerCase() == normalized.toLowerCase(),
+        orElse: () => '',
+      );
+      if (foundKey.isNotEmpty) {
+        categoryData = cat[foundKey];
+      }
+    }
+
+    // If still null, use defaultColors (so app never crashes)
+    categoryData = categoryData ?? defaultColors;
+
+    final accentColor = categoryData["color"]!;
+
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 5),
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-          border:
-              Border.all(width: 0.5, color: Colors.grey.withValues(alpha: 0.5)),
-          borderRadius: BorderRadius.circular(14)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              SizedBox(
-                width: 250,
-                child: Text(
-                  title,
-                  style: GoogleFonts.inter(
-                      fontSize: 15, fontWeight: FontWeight.bold),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Spacer(),
-              IconButton(
-                onPressed: () {
-                  callback();
-                },
-                icon: isStar
-                    ? Icon(
-                        Icons.star,
-                        color: Colors.yellow,
-                      )
-                    : Icon(Icons.star_border),
-              )
-            ],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border(
+          left: BorderSide(
+            color: accentColor,
+            width: 4,
           ),
-          SizedBox(
-            height: 8,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          Text(
-            body,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: Colors.black.withValues(alpha: 0.7),
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          SizedBox(
-            height: 20,
-          ),
-          Row(
-            children: [
-              Icon(
-                Icons.watch_later_outlined,
-                size: 18,
-                color: Colors.black.withValues(alpha: 0.6),
-              ),
-              SizedBox(
-                width: 5,
-              ),
-              Text(
-                time,
-                style: GoogleFonts.inter(
-                    fontSize: 13, color: Colors.black.withValues(alpha: 0.6)),
-              ),
-              Spacer(),
-              // Text(category)
-              categoryCard(category, cat[category]!),
-            ],
-          )
         ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF111827),
+                        height: 1.3,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  _buildStarButton(accentColor),
+                ],
+              ),
+
+              const SizedBox(height: 10),
+
+              // Body
+              Text(
+                body,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  height: 1.5,
+                  color: const Color(0xFF6B7280),
+                  fontWeight: FontWeight.w400,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+
+              const SizedBox(height: 14),
+
+              // Footer
+              Row(
+                children: [
+                  Icon(
+                    Icons.schedule_rounded,
+                    size: 16,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    time,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: const Color(0xFF9CA3AF),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  _buildCategoryChip(
+                      normalized.isEmpty ? "Unknown" : category, categoryData),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  //--------------------------------------
-
-  Widget categoryCard(String data, Map<String, dynamic> cat) {
+  Widget _buildCategoryChip(String data, Map<String, Color> cat) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          // color: Colors.green.withValues(alpha: 0.05)
-          color: cat["background"].withValues(alpha: 0.05)),
-      child: Center(
-        child: Text(
-          data,
-          style: TextStyle(color: cat["color"]),
+        color: cat["light"],
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        data,
+        style: GoogleFonts.inter(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: cat["color"],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStarButton(Color accentColor) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: callback,
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Icon(
+            isStar ? Icons.star_rounded : Icons.star_outline_rounded,
+            color: isStar ? accentColor : const Color(0xFFD1D5DB),
+            size: 22,
+          ),
         ),
       ),
     );
   }
 }
+
+// import 'package:flutter/material.dart';
+// import 'package:google_fonts/google_fonts.dart';
+//
+// class NoteCard extends StatelessWidget {
+//   final String title;
+//   final String body;
+//   final bool isStar;
+//   final String time;
+//   final String category;
+//   final VoidCallback callback;
+//
+//   const NoteCard({
+//     super.key,
+//     required this.title,
+//     required this.body,
+//     required this.isStar,
+//     required this.time,
+//     required this.category,
+//     required this.callback,
+//   });
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     final cat = {
+//       "Personal": {
+//         "color": const Color(0xFF10B981),
+//         "light": const Color(0xFFECFDF5),
+//       },
+//       "School": {
+//         "color": const Color(0xFFEC4899),
+//         "light": const Color(0xFFFDF2F8),
+//       },
+//       "Work": {
+//         "color": const Color(0xFF8B5CF6),
+//         "light": const Color(0xFFF5F3FF),
+//       },
+//       "Company": {
+//         "color": const Color(0xFFF59E0B),
+//         "light": const Color(0xFFFEF3C7),
+//       },
+//       "General": {
+//         "color": const Color(0xFF3B82F6),
+//         "light": const Color(0xFFEFF6FF),
+//       },
+//     };
+//
+//     final categoryData = cat[category]!;
+//     final accentColor = categoryData["color"] as Color;
+//
+//     return Container(
+//       margin: const EdgeInsets.only(bottom: 12),
+//       decoration: BoxDecoration(
+//         color: Colors.white,
+//         borderRadius: BorderRadius.circular(12),
+//         border: Border(
+//           left: BorderSide(
+//             color: accentColor,
+//             width: 4,
+//           ),
+//         ),
+//         boxShadow: [
+//           BoxShadow(
+//             color: Colors.black.withOpacity(0.04),
+//             blurRadius: 8,
+//             offset: const Offset(0, 2),
+//           ),
+//         ],
+//       ),
+//       child: Material(
+//         color: Colors.transparent,
+//         child: Padding(
+//           padding: const EdgeInsets.all(16),
+//           child: Column(
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               // Header
+//               Row(
+//                 children: [
+//                   Expanded(
+//                     child: Text(
+//                       title,
+//                       style: GoogleFonts.inter(
+//                         fontSize: 16,
+//                         fontWeight: FontWeight.w600,
+//                         color: const Color(0xFF111827),
+//                         height: 1.3,
+//                       ),
+//                       maxLines: 1,
+//                       overflow: TextOverflow.ellipsis,
+//                     ),
+//                   ),
+//                   const SizedBox(width: 12),
+//                   _buildStarButton(accentColor),
+//                 ],
+//               ),
+//
+//               const SizedBox(height: 10),
+//
+//               // Body
+//               Text(
+//                 body,
+//                 style: GoogleFonts.inter(
+//                   fontSize: 14,
+//                   height: 1.5,
+//                   color: const Color(0xFF6B7280),
+//                   fontWeight: FontWeight.w400,
+//                 ),
+//                 maxLines: 2,
+//                 overflow: TextOverflow.ellipsis,
+//               ),
+//
+//               const SizedBox(height: 14),
+//
+//               // Footer
+//               Row(
+//                 children: [
+//                   Icon(
+//                     Icons.schedule_rounded,
+//                     size: 16,
+//                     color: const Color(0xFF9CA3AF),
+//                   ),
+//                   const SizedBox(width: 6),
+//                   Text(
+//                     time,
+//                     style: GoogleFonts.inter(
+//                       fontSize: 13,
+//                       color: const Color(0xFF9CA3AF),
+//                       fontWeight: FontWeight.w500,
+//                     ),
+//                   ),
+//                   const Spacer(),
+//                   _buildCategoryChip(category, categoryData),
+//                 ],
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+//
+//   Widget _buildCategoryChip(String data, Map<String, dynamic> cat) {
+//     return Container(
+//       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+//       decoration: BoxDecoration(
+//         color: cat["light"] as Color,
+//         borderRadius: BorderRadius.circular(6),
+//       ),
+//       child: Text(
+//         data,
+//         style: GoogleFonts.inter(
+//           fontSize: 12,
+//           fontWeight: FontWeight.w600,
+//           color: cat["color"] as Color,
+//         ),
+//       ),
+//     );
+//   }
+//
+//   Widget _buildStarButton(Color accentColor) {
+//     return Material(
+//       color: Colors.transparent,
+//       child: InkWell(
+//         customBorder: const CircleBorder(),
+//         onTap: callback,
+//         child: Padding(
+//           padding: const EdgeInsets.all(4),
+//           child: Icon(
+//             isStar ? Icons.star_rounded : Icons.star_outline_rounded,
+//             color: isStar ? accentColor : const Color(0xFFD1D5DB),
+//             size: 22,
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
+//

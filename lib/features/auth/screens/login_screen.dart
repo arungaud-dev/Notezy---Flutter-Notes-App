@@ -139,9 +139,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           // call notifier (notifier was captured earlier)
           final maybeFuture = category.addCategory(data);
           await Future.value(maybeFuture); // handles void or Future
-        } catch (e, st) {
-          debugPrint(
-              '(#${i + 1}) CATEGORY Writing FAILED for ${data.title}: $e\n$st');
+        } catch (e, _) {
+          debugPrint('(#${i + 1}) CATEGORY Writing FAILED ERROR');
         }
       }
     } catch (e, st) {
@@ -173,7 +172,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     height: 163,
                     width: 216,
                     child: Image.asset(
-                      "assets/images/stack.png",
+                      "assets/images/stack.jpeg",
                       fit: BoxFit.cover,
                     ),
                   ),
