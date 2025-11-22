@@ -70,32 +70,33 @@ class FirebaseServices {
 
   //------------------------------------- CATEGORY FUNCTIONS -------------------
 
-  Future<void> addCategoryInFire(String title) async {
+  Future<void> addCategoryInFire(Map<String, dynamic> data) async {
     final uid = ref.watch(uidProvider);
     try {
       await _firestore
           .collection("accounts")
           .doc(uid)
           .collection("category")
-          .doc(title)
-          .set({"title": title});
-      // .add({"title": title});
+          .doc(data["title"])
+          .set(data);
     } catch (e) {
       debugPrint("A ERROR ON CATEGORY ADD");
     }
   }
 
-  Future<List<String>> getCategoryFromFire() async {
+  Future<List<Map<String, dynamic>>> getCategoryFromFire() async {
     final uid = ref.watch(uidProvider);
     try {
-      final notes = await _firestore
+      final categories = await _firestore
           .collection("accounts")
           .doc(uid)
           .collection("category")
           .get();
-      final docs = notes.docs;
+      final docs = categories.docs;
 
-      return docs.map<String>((data) => data["title"]).toList();
+      return docs
+          .map((data) => {"title": data["title"], "color": data["color"]})
+          .toList();
     } catch (e) {
       debugPrint("A ERROR ON CATEGORY GET FROM FIREBASE: ${e.toString()}");
       return [];

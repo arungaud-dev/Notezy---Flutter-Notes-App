@@ -55,7 +55,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final filter = ref.watch(selectedCategoryProvider);
     final data = ref.watch(notesProvider);
     ref.watch(fireDataProvider);
-    final List<String> categories = ref.watch(categoryHandler);
+    final List<Map<String, dynamic>> categories = ref.watch(categoryHandler);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -192,19 +192,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                             ...categories.map((data) {
                               return PopupMenuItem(
-                                value: data,
+                                value: data["title"] as String,
                                 child: Text(
-                                  data,
+                                  data["title"],
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
-                                    fontWeight: filter == data
+                                    fontWeight: filter == data["title"]
                                         ? FontWeight.w600
                                         : FontWeight.w400,
                                     color: const Color(0xFF1A1A1A),
                                   ),
                                 ),
                               );
-                            }).toList(),
+                            }),
                           ];
                         },
                       ),

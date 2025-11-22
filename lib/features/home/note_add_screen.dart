@@ -18,11 +18,22 @@ class _NoteAddScreenState extends ConsumerState<NoteAddScreen> {
   final _categoryController = TextEditingController();
   final _titleController = TextEditingController();
   final _bodyController = TextEditingController();
+  String? selectedColor = "green";
   String? selected = "General";
   int isStar = 0;
 
   final _df = DateFormat('d MMM yyyy', 'en_US');
   String fmtDate(DateTime dt) => _df.format(dt.toLocal());
+
+  final List<Map<String, dynamic>> colors = [
+    {"color": Colors.green as Color, "value": "green"},
+    {"color": Colors.green[700] as Color, "value": "darkGreen"},
+    {"color": Colors.yellow as Color, "value": "yellow"},
+    {"color": Colors.pink as Color, "value": "pink"},
+    {"color": Colors.red as Color, "value": "red"},
+    {"color": Colors.deepPurple as Color, "value": "purple"},
+    {"color": Colors.amber as Color, "value": "amber"},
+  ];
 
   @override
   void dispose() {
@@ -34,7 +45,23 @@ class _NoteAddScreenState extends ConsumerState<NoteAddScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> categories = ref.watch(categoryHandler);
+    final List<Map<String, dynamic>> categories = ref.watch(categoryHandler);
+
+    /// -- STEP 1: UNIQUE TITLES NIKALO --
+    final uniqueTitles = <String>[];
+    for (final cat in categories) {
+      final title = (cat['title'] ?? '').toString().trim();
+      if (title.isEmpty) continue;
+      if (!uniqueTitles.contains(title)) {
+        uniqueTitles.add(title);
+      }
+    }
+
+    /// -- STEP 2: selected VALUE SHAAMil hai ya nahi --
+    if (uniqueTitles.isNotEmpty &&
+        (selected == null || !uniqueTitles.contains(selected))) {
+      selected = uniqueTitles.first; // Default value daal dena
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -66,6 +93,70 @@ class _NoteAddScreenState extends ConsumerState<NoteAddScreen> {
           ),
         ),
         actions: [
+          IconButton(
+              onPressed: () {
+                showModalBottomSheet(
+                    isDismissible: true,
+                    isScrollControlled: true,
+                    enableDrag: true,
+                    showDragHandle: true,
+                    context: context,
+                    builder: (context) {
+                      return Container(
+                        padding: EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(14),
+                              topRight: Radius.circular(14)),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              "Add Category",
+                              style: TextStyle(
+                                  fontSize: 22, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(
+                              height: 20,
+                            ),
+                            SizedBox(
+                              height: 50,
+                              child: TextField(
+                                decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText: "Enter category"),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 15,
+                            ),
+                            //------------------------------------------ COLORS
+
+
+                            Wrap(
+                              direction: Axis.horizontal,
+                              spacing: 5, // Horizontal spacing
+                              runSpacing: 5, // Vertical spacing
+                              children: colors.map((colorItem) {
+                                final col = colorItem["color"] as Color;
+                                return Container(
+                                  height: 60,
+                                  width: 60,
+                                  decoration: BoxDecoration(
+                                    // color: colorItem["color"] as Color,
+                                    color: col,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                );
+                              }).toList(),
+                            )
+
+                          ],
+                        ),
+                      );
+                    });
+              },
+              icon: Icon(Icons.category)),
           IconButton(
             onPressed: () {
               setState(() {
@@ -222,13 +313,11 @@ class _NoteAddScreenState extends ConsumerState<NoteAddScreen> {
                 ),
                 dropdownColor: Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                items: categories
-                    .map(
-                      (e) => DropdownMenuItem(
-                        value: e,
-                        child: Text(e),
-                      ),
-                    )
+                items: uniqueTitles
+                    .map((title) => DropdownMenuItem<String>(
+                          value: title,
+                          child: Text(title),
+                        ))
                     .toList(),
                 onChanged: (value) {
                   setState(() {

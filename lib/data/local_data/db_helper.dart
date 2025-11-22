@@ -35,7 +35,9 @@ class DBHelper {
 
       await db.execute("""
       CREATE TABLE category(
-      title TEXT PRIMARY KEY)
+      title TEXT PRIMARY KEY,
+      color TEXT NOT NULL
+      )
       """);
     });
     return db!;
@@ -107,10 +109,10 @@ class DBHelper {
 
 //-------------------------------- CATEGORY FUNCTIONS ---------------------------
 
-  Future<void> addCategory(String title) async {
+  Future<void> addCategory(Map<String, dynamic> data) async {
     final db = await database;
     try {
-      await db.insert("category", {"title": title});
+      await db.insert("category", data);
     } catch (e) {
       debugPrint("A ERROR ON CATEGORY ADD");
     }
@@ -125,11 +127,11 @@ class DBHelper {
     }
   }
 
-  Future<List<String>> getCategory() async {
+  Future<List<Map<String, dynamic>>> getCategory() async {
     final db = await database;
     try {
       final data = await db.query("category");
-      return data.map((d) => d["title"] as String).toList();
+      return data;
     } catch (e) {
       debugPrint("A ERROR ON GETTING CATEGORY: $e");
       return [];
