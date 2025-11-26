@@ -34,7 +34,7 @@ final fireDataProvider = Provider.autoDispose<
 
           switch (change.type) {
             case DocumentChangeType.added:
-              notifier.addData(data);
+              notifier.addData(data, "Fire Data Provider");
               break;
             case DocumentChangeType.modified:
               notifier.updateData(

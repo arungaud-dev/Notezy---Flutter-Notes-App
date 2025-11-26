@@ -106,7 +106,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final data = notes[i];
         try {
           // call notifier (notifier was captured earlier)
-          final maybeFuture = notesNotifier.addData(data);
+          final maybeFuture = notesNotifier.addData(data, "Fire Data Provider");
           await Future.value(maybeFuture); // handles void or Future
         } catch (e, st) {
           debugPrint('(#${i + 1}) Writing FAILED for ${data.title}: $e\n$st');

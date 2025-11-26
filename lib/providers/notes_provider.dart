@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notes_app/data/local_data/db_helper.dart';
 import 'package:notes_app/data/models/note_model.dart';
+import 'package:notes_app/data/models/read_note.dart';
 import 'package:notes_app/data/sync_manager/sync_manager.dart';
 import 'package:notes_app/providers/category_provider.dart';
 
-class DataNotifier extends AsyncNotifier<List<NoteModel>> {
+class DataNotifier extends AsyncNotifier<List<NoteWithCategory>> {
   final DBHelper db = DBHelper.instance;
-  List<NoteModel>? _cachedAllNotes;
+  List<NoteWithCategory>? _cachedAllNotes;
 
   SyncManager get manager => ref.read(syncManagerProvider);
 
   @override
-  Future<List<NoteModel>> build() async {
-    _cachedAllNotes ??= await db.getData();
+  Future<List<NoteWithCategory>> build() async {
+    _cachedAllNotes ??= await db.getRaw();
 
     ref.listen(selectedCategoryProvider, (previous, next) {
       _applyFilter(next);
@@ -21,7 +22,9 @@ class DataNotifier extends AsyncNotifier<List<NoteModel>> {
 
     final filter = ref.read(selectedCategoryProvider);
     if (filter != null) {
-      return _cachedAllNotes!.where((note) => note.category == filter).toList();
+      return _cachedAllNotes!
+          .where((note) => note.categoryTitle == filter)
+          .toList();
     }
 
     return _cachedAllNotes!;
@@ -32,7 +35,7 @@ class DataNotifier extends AsyncNotifier<List<NoteModel>> {
 
     if (filter != null) {
       state = AsyncData(
-        _cachedAllNotes!.where((note) => note.category == filter).toList(),
+        _cachedAllNotes!.where((note) => note.categoryTitle == filter).toList(),
       );
     } else {
       state = AsyncData(_cachedAllNotes!);
@@ -42,22 +45,47 @@ class DataNotifier extends AsyncNotifier<List<NoteModel>> {
   Future<void> _updateCacheAndRefresh() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      _cachedAllNotes = await db.getData();
+      _cachedAllNotes = await db.getRaw();
 
       final filter = ref.read(selectedCategoryProvider);
       if (filter != null) {
         return _cachedAllNotes!
-            .where((note) => note.category == filter)
+            .where((note) => note.categoryTitle == filter)
             .toList();
       }
       return _cachedAllNotes!;
     });
   }
 
-  Future<void> addData(NoteModel noteData) async {
+  Future<void> addData(NoteModel noteData, String funID) async {
+    bool shouldAdd = true;
+    if (_cachedAllNotes != null && _cachedAllNotes!.isNotEmpty) {
+      for (final element in _cachedAllNotes!) {
+        if (element.noteID == noteData.id &&
+            element.updatedAt == noteData.updatedAt) {
+          return;
+        }
+      }
+    }
+
+    if (_cachedAllNotes != null && _cachedAllNotes!.isNotEmpty) {
+      try {
+        final existingNote = _cachedAllNotes!.firstWhere(
+          (element) => element.noteID == noteData.id,
+        );
+        if (existingNote != null) {
+          if (existingNote.updatedAt == noteData.updatedAt) {
+            shouldAdd = false;
+          }
+        }
+      } catch (e) {
+        debugPrint("Exception in firstWhere: ${e.toString()}");
+      }
+    }
+
+    if (!shouldAdd) return;
     try {
       await db.insertData(noteData);
-
       try {
         await manager.syncLocalToFirebase();
       } catch (e, st) {
@@ -73,20 +101,16 @@ class DataNotifier extends AsyncNotifier<List<NoteModel>> {
 
   Future<void> deleteData(String id) async {
     try {
-      // Optimistic delete - instant UI update
       final currentNotes = state.value;
       if (currentNotes != null) {
-        final updatedNotes = currentNotes.where((n) => n.id != id).toList();
+        final updatedNotes = currentNotes.where((n) => n.noteID != id).toList();
         state = AsyncData(updatedNotes);
-        _cachedAllNotes = _cachedAllNotes?.where((n) => n.id != id).toList();
+        _cachedAllNotes =
+            _cachedAllNotes?.where((n) => n.noteID != id).toList();
       }
-
-      // Background operations
       await db.deleteData(id);
       await manager.deleteFromFire(id);
     } catch (e, st) {
-      debugPrint('Delete error: $e\n$st');
-      // Error pe fresh data fetch karo
       await _updateCacheAndRefresh();
     }
   }
@@ -102,39 +126,47 @@ class DataNotifier extends AsyncNotifier<List<NoteModel>> {
     int? isSynced,
   }) async {
     try {
-      final currentNotes = state.value;
-      if (currentNotes == null) return;
+      if (_cachedAllNotes == null) return;
 
-      final noteToUpdate = currentNotes.firstWhere((note) => note.id == id);
-      final updatedNote = noteToUpdate.copyWith(
-        title: title,
+      final originalNote = _cachedAllNotes!.firstWhere((n) => n.noteID == id);
+
+      final updatedNoteObject = originalNote.copyWith(
+        noteTitle: title,
         body: body,
         createdAt: createdAt,
-        updatedAt: updatedAt,
         isStar: isStar,
-        category: category,
+        categoryTitle: category,
         isSynced: isSynced,
       );
 
-      // Optimistic update - instant UI
-      final updatedNotes = currentNotes.map((n) {
-        if (n.id == id) return updatedNote;
+      final dbModelCheck = originalNote.copyWithFor(
+          id: id,
+          title: title,
+          body: body,
+          createdAt: createdAt,
+          updatedAt: updatedAt,
+          isStar: isStar,
+          category: category,
+          isSynced: 0);
+
+      _cachedAllNotes = _cachedAllNotes!.map((n) {
+        if (n.noteID == id) return updatedNoteObject;
         return n;
       }).toList();
 
       final filter = ref.read(selectedCategoryProvider);
+
       if (filter != null) {
         state = AsyncData(
-          updatedNotes.where((note) => note.category == filter).toList(),
+          _cachedAllNotes!
+              .where((note) => note.categoryTitle == filter)
+              .toList(),
         );
       } else {
-        state = AsyncData(updatedNotes);
+        state = AsyncData(_cachedAllNotes!);
       }
 
-      _cachedAllNotes = updatedNotes;
-
-      // Background operations
-      await db.updateData(id, updatedNote);
+      await db.updateData(id, dbModelCheck);
       await manager.syncLocalToFirebase();
     } catch (e, st) {
       debugPrint('Update error: $e\n$st');
@@ -144,38 +176,41 @@ class DataNotifier extends AsyncNotifier<List<NoteModel>> {
 
   Future<void> updateStar(String id) async {
     try {
-      final currentNotes = state.value;
-      if (currentNotes == null) return;
+      if (_cachedAllNotes == null) return;
 
-      final note = currentNotes.firstWhere((n) => n.id == id);
+      final note = _cachedAllNotes!.firstWhere((n) => n.noteID == id);
       final newStarValue = note.isStar == 0 ? 1 : 0;
 
-      // ⚡ INSTANT UI UPDATE - zero lag!
-      final updatedNotes = currentNotes.map((n) {
-        if (n.id == id) {
+      _cachedAllNotes = _cachedAllNotes!.map((n) {
+        if (n.noteID == id) {
           return n.copyWith(isStar: newStarValue);
+        } else {
+          return n;
         }
-        return n;
       }).toList();
 
-      // Filter apply karke state update
       final filter = ref.read(selectedCategoryProvider);
       if (filter != null) {
         state = AsyncData(
-          updatedNotes.where((note) => note.category == filter).toList(),
+          _cachedAllNotes!
+              .where((note) => note.categoryTitle == filter)
+              .toList(),
         );
       } else {
-        state = AsyncData(updatedNotes);
+        state = AsyncData(_cachedAllNotes!);
       }
 
-      // Cache update
-      _cachedAllNotes = updatedNotes;
-
+      final notes = NoteModel(
+          id: note.noteID,
+          title: note.noteTitle,
+          body: note.body,
+          createdAt: note.createdAt,
+          updatedAt: note.updatedAt,
+          isStar: newStarValue,
+          category: note.categoryTitle,
+          isSynced: 0);
       // Background operations
-      await db.updateData(
-        id,
-        note.copyWith(isStar: newStarValue, isSynced: 0),
-      );
+      await db.updateData(id, notes);
 
       await manager.syncLocalToFirebase();
     } catch (e, st) {
@@ -190,6 +225,7 @@ class DataNotifier extends AsyncNotifier<List<NoteModel>> {
   }
 }
 
-final notesProvider = AsyncNotifierProvider<DataNotifier, List<NoteModel>>(
+final notesProvider =
+    AsyncNotifierProvider<DataNotifier, List<NoteWithCategory>>(
   () => DataNotifier(),
 );

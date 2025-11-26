@@ -3,7 +3,7 @@ class NoteModel {
   final String title;
   final String body;
   final String? createdAt;
-  final int? updatedAt;
+  final int updatedAt;
   final int? isStar;
   final String category;
   final int isSynced;
@@ -13,7 +13,7 @@ class NoteModel {
       required this.title,
       required this.body,
       this.createdAt,
-      this.updatedAt,
+      required this.updatedAt,
       this.isStar,
       required this.category,
       required this.isSynced});
@@ -26,7 +26,7 @@ class NoteModel {
       "createdAt": createdAt,
       "updatedAt": updatedAt,
       "isStar": isStar,
-      "category": category,
+      "categoryID": category,
       "isSynced": isSynced
     };
   }
@@ -53,13 +53,13 @@ class NoteModel {
 
   factory NoteModel.fromMap(Map<String, dynamic> map) {
     return NoteModel(
-        id: map["id"],
+        id: map["id"].toString(),
         title: map["title"],
         body: map["body"],
         createdAt: map["createdAt"],
         updatedAt: map["updatedAt"],
         isStar: map["isStar"],
-        category: map["category"],
+        category: map["categoryID"],
         isSynced: map["isSynced"]);
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:notes_app/data/models/read_note.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:notes_app/data/models/note_model.dart';
@@ -13,7 +14,7 @@ class DBHelper {
   static final String column3 = "createdAt";
   static final String column4 = "updatedAt";
   static final String column5 = "isStar";
-  static final String column6 = "category";
+  static final String column6 = "categoryID";
   static final String column7 = "isSynced";
 
   static Database? db;
@@ -23,11 +24,12 @@ class DBHelper {
     db = await openDatabase(join(await getDatabasesPath(), "myDB.db"),
         version: 1, onCreate: (db, version) async {
       await db.execute("""
-      CREATE table $tableName(id TEXT NOT NULL PRIMARY KEY,
+      CREATE table $tableName(
+      id INTEGER PRIMARY KEY,
       $column1 TEXT NOT NULL,
       $column2 TEXT NOT NULL,
       $column3 TEXT NOT NULL,
-      $column4 INTEGER,
+      $column4 INTEGER NOT NULL,
       $column5 INTEGER,
       $column6 TEXT NOT NULL,
       $column7 INTEGER NOT NULL)
@@ -55,15 +57,38 @@ class DBHelper {
     }
   }
 
-//GET DATA
-  Future<List<NoteModel>> getData() async {
+  Future<List<NoteWithCategory>> getRaw() async {
     final db = await database;
     try {
-      final data = await db.query(tableName, orderBy: "$column4 DESC");
-      return data.map((e) => NoteModel.fromMap(e)).toList();
+      final notes = await db.rawQuery("""
+      SELECT 
+      $tableName.id as noteID,
+      $tableName.$column1 as noteTitle,
+      $tableName.$column2,
+      $tableName.$column3,
+      $tableName.$column4,
+      $tableName.$column5,
+      $tableName.$column7,
+      category.title as categoryTitle,
+      category.color as categoryColor
+      FROM $tableName LEFT JOIN category ON $tableName.$column6 = category.title      
+      """);
+
+      return notes
+          .map((data) => NoteWithCategory(
+              noteID: data["noteID"].toString(),
+              noteTitle: data["noteTitle"] as String,
+              body: data[column2] as String,
+              createdAt: data[column3] as String,
+              isStar: data[column5] as int,
+              isSynced: data[column7] as int,
+              updatedAt: data[column4] as int,
+              categoryTitle: data["categoryTitle"]?.toString() ?? "",
+              categoryColor: data["categoryColor"]?.toString() ?? "blue"))
+          .toList();
     } catch (e) {
-      debugPrint("A ERROR ON DATA GETTING PLEASE CHECK DATABASE FILE");
-      return [];
+      debugPrint("A ERROR ON GET RAW DATA");
+      throw Exception("A ERROR ON GET RAW DATA: ${e.toString()}");
     }
   }
 
@@ -82,7 +107,7 @@ class DBHelper {
     try {
       await db.update(tableName, data.toMap(), where: "id=?", whereArgs: [id]);
     } catch (e) {
-      debugPrint("A ERROR ON DATA UPDATING");
+      debugPrint("A ERROR ON DATA UPDATING: ${e.toString()}");
     }
   }
 
@@ -93,7 +118,8 @@ class DBHelper {
           await db.query(tableName, where: "$column7=?", whereArgs: [0]);
       return data.map((e) => NoteModel.fromMap(e)).toList();
     } catch (e) {
-      debugPrint("A ERROR ON DATA GETTING PLEASE CHECK DATABASE FILE");
+      debugPrint(
+          "A ERROR ON DATA GETTING PLEASE CHECK DATABASE FILE: ${e.toString()}");
       return [];
     }
   }

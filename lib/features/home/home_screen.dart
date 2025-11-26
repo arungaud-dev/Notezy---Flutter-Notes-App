@@ -22,33 +22,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     ref.read(categoryHandler.notifier).getCategory();
-    syncCategoryFireToLocal();
+    // syncCategoryFireToLocal();
   }
 
-  Future<void> syncCategoryFireToLocal() async {
-    final firebaseService = ref.read(firebaseServicesProvider);
-    final category = ref.read(categoryHandler.notifier);
-    try {
-      final categories = await firebaseService.getCategoryFromFire();
-
-      if (categories.isEmpty) {
-        debugPrint('syncFirebaseToLocal: no categories to sync');
-        return;
-      }
-
-      for (var i = 0; i < categories.length; i++) {
-        final data = categories[i];
-        try {
-          final maybeFuture = category.addCategory(data);
-          await Future.value(maybeFuture);
-        } catch (e, _) {
-          debugPrint('(#${i + 1}) CATEGORY Writing FAILED ERROR');
-        }
-      }
-    } catch (e, st) {
-      debugPrint('syncFirebaseToLocal top-level error: $e\n$st');
-    }
-  }
+  // Future<void> syncCategoryFireToLocal() async {
+  //   final firebaseService = ref.read(firebaseServicesProvider);
+  //   final category = ref.read(categoryHandler.notifier);
+  //   try {
+  //     final categories = await firebaseService.getCategoryFromFire();
+  //
+  //     if (categories.isEmpty) {
+  //       debugPrint('syncFirebaseToLocal: no categories to sync');
+  //       return;
+  //     }
+  //
+  //     for (var i = 0; i < categories.length; i++) {
+  //       final data = categories[i];
+  //       try {
+  //         final maybeFuture = category.addCategory(data);
+  //         await Future.value(maybeFuture);
+  //       } catch (e, _) {
+  //         debugPrint('(#${i + 1}) CATEGORY Writing FAILED ERROR');
+  //       }
+  //     }
+  //   } catch (e, st) {
+  //     debugPrint('syncFirebaseToLocal top-level error: $e\n$st');
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -243,32 +243,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       itemCount: data.length,
                       itemBuilder: (context, index) {
                         final note = data[index];
+                        // debugPrint(
+                        //     "-----------CATEGORY: ${note.categoryTitle}, COLOR: ${note.categoryColor}, ID: ${note.noteID}, updatedAT: ${note.updatedAt}");
                         return GestureDetector(
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => NoteView(
-                                  id: note.id,
-                                  title: note.title,
+                                  id: note.noteID,
+                                  title: note.noteTitle,
                                   body: note.body,
-                                  time: note.createdAt!,
-                                  category: note.category,
+                                  time: note.createdAt,
+                                  category: note.categoryTitle,
                                   filter: filter,
                                 ),
                               ),
                             );
                           },
                           child: NoteCard(
-                            title: note.title,
+                            title: note.noteTitle,
                             body: note.body,
                             isStar: note.isStar == 1,
-                            time: note.createdAt!,
-                            category: note.category,
+                            time: note.createdAt,
+                            category: note.categoryTitle,
+                            color: note.categoryColor,
                             callback: () {
                               ref
                                   .read(notesProvider.notifier)
-                                  .updateStar(note.id);
+                                  .updateStar(note.noteID);
                             },
                           ),
                         );

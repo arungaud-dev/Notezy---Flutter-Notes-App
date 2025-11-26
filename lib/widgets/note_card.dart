@@ -8,68 +8,89 @@ class NoteCard extends StatelessWidget {
   final String time;
   final String category;
   final VoidCallback callback;
+  final String color;
 
-  const NoteCard({
-    super.key,
-    required this.title,
-    required this.body,
-    required this.isStar,
-    required this.time,
-    required this.category,
-    required this.callback,
-  });
+  const NoteCard(
+      {super.key,
+      required this.title,
+      required this.body,
+      required this.isStar,
+      required this.time,
+      required this.category,
+      required this.callback,
+      required this.color});
 
   @override
   Widget build(BuildContext context) {
-    // Predefined category styles
-    final Map<String, Map<String, Color>> cat = {
-      "Personal": {
-        "color": const Color(0xFF10B981),
-        "light": const Color(0xFFECFDF5),
-      },
-      "School": {
-        "color": const Color(0xFFEC4899),
-        "light": const Color(0xFFFDF2F8),
-      },
-      "Work": {
-        "color": const Color(0xFF8B5CF6),
-        "light": const Color(0xFFF5F3FF),
-      },
-      "Company": {
-        "color": const Color(0xFFF59E0B),
-        "light": const Color(0xFFFEF3C7),
-      },
-      "General": {
-        "color": const Color(0xFF3B82F6),
-        "light": const Color(0xFFEFF6FF),
-      },
-    };
-
-    // Default/fallback colors for unknown categories
-    final Map<String, Color> defaultColors = {
-      "color": const Color(0xFF6B7280),
-      "light": const Color(0xFFE5E7EB),
-    };
-
-    // Normalize incoming category (trim + case-insensitive match)
-    final normalized = category.trim();
-    Map<String, Color>? categoryData = cat[normalized];
-
-    if (categoryData == null) {
-      // case-insensitive search
-      final foundKey = cat.keys.firstWhere(
-        (k) => k.toLowerCase() == normalized.toLowerCase(),
-        orElse: () => '',
-      );
-      if (foundKey.isNotEmpty) {
-        categoryData = cat[foundKey];
+    MaterialColor getColor() {
+      // debugPrint("----------------------------CATEGORY: $title, COLOR: $color");
+      switch (color) {
+        case "green":
+          return Colors.green;
+        case "yellow":
+          return Colors.yellow;
+        case "pink":
+          return Colors.pink;
+        case "red":
+          return Colors.red;
+        case "purple":
+          return Colors.deepPurple;
+        case "amber":
+          return Colors.amber;
+        default:
+          return Colors.blue;
       }
     }
 
-    // If still null, use defaultColors (so app never crashes)
-    categoryData = categoryData ?? defaultColors;
+    // Predefined category styles
+    // final Map<String, Map<String, Color>> cat = {
+    //   "Personal": {
+    //     "color": const Color(0xFF10B981),
+    //     "light": const Color(0xFFECFDF5),
+    //   },
+    //   "School": {
+    //     "color": const Color(0xFFEC4899),
+    //     "light": const Color(0xFFFDF2F8),
+    //   },
+    //   "Work": {
+    //     "color": const Color(0xFF8B5CF6),
+    //     "light": const Color(0xFFF5F3FF),
+    //   },
+    //   "Company": {
+    //     "color": const Color(0xFFF59E0B),
+    //     "light": const Color(0xFFFEF3C7),
+    //   },
+    //   "General": {
+    //     "color": const Color(0xFF3B82F6),
+    //     "light": const Color(0xFFEFF6FF),
+    //   },
+    // };
 
-    final accentColor = categoryData["color"]!;
+    // Default/fallback colors for unknown categories
+    // final Map<String, Color> defaultColors = {
+    //   "color": const Color(0xFF6B7280),
+    //   "light": const Color(0xFFE5E7EB),
+    // };
+
+    //  Normalize incoming category (trim + case-insensitive match)
+    // // final normalized = category.trim();
+    // // Map<String, Color>? categoryData = cat[normalized];
+    // //
+    // // if (categoryData == null) {
+    // //   // case-insensitive search
+    // //   final foundKey = cat.keys.firstWhere(
+    // //     (k) => k.toLowerCase() == normalized.toLowerCase(),
+    // //     orElse: () => '',
+    // //   );
+    // //   if (foundKey.isNotEmpty) {
+    // //     categoryData = cat[foundKey];
+    // //   }
+    // // }
+
+    // If still null, use defaultColors (so app never crashes)
+    // categoryData = categoryData ?? defaultColors;
+
+    // final accentColor = categoryData["color"]!;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -78,7 +99,7 @@ class NoteCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border(
           left: BorderSide(
-            color: accentColor,
+            color: getColor(),
             width: 4,
           ),
         ),
@@ -114,7 +135,7 @@ class NoteCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  _buildStarButton(accentColor),
+                  _buildStarButton(getColor()),
                 ],
               ),
 
@@ -154,7 +175,7 @@ class NoteCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   _buildCategoryChip(
-                      normalized.isEmpty ? "Unknown" : category, categoryData),
+                      category.isEmpty ? "Unknown" : category, getColor()),
                 ],
               ),
             ],
@@ -164,11 +185,11 @@ class NoteCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryChip(String data, Map<String, Color> cat) {
+  Widget _buildCategoryChip(String data, MaterialColor cat) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: cat["light"],
+        color: cat,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
@@ -176,7 +197,7 @@ class NoteCard extends StatelessWidget {
         style: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: cat["color"],
+          color: Colors.white,
         ),
       ),
     );

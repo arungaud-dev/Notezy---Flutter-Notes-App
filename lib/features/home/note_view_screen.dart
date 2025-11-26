@@ -64,6 +64,8 @@ class _NoteViewState extends ConsumerState<NoteView> {
           );
       isChanged = false;
     }
+    debugPrint(
+        "------------------------------>>>>>>>>>>>>>>>>>>>>>>>>>>AUTO SAVE CALLED");
   }
 
   Future<void> _forceSave() async {
@@ -78,7 +80,7 @@ class _NoteViewState extends ConsumerState<NoteView> {
     int currentStar = 0;
     notesAsync.whenData((notes) {
       final note = notes.firstWhere(
-        (n) => n.id == widget.id,
+        (n) => n.noteID == widget.id,
         orElse: () => notes.first,
       );
       currentStar = note.isStar ?? 0;

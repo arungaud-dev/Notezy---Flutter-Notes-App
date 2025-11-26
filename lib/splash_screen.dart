@@ -22,16 +22,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     });
   }
 
-  Future<void> syncFirebaseToLocal() async {
-    if (!mounted) return;
-    final notes = await ref.read(firebaseServicesProvider).getDataFromFire(0);
-    debugPrint(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>DATA FOUND: $notes");
-    if (notes.isEmpty) return;
-
-    for (var data in notes) {
-      ref.read(notesProvider.notifier).addData(data);
-    }
-  }
+  // Future<void> syncFirebaseToLocal() async {
+  //   if (!mounted) return;
+  //   final notes = await ref.read(firebaseServicesProvider).getDataFromFire(0);
+  //   debugPrint(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>DATA FOUND: $notes");
+  //   if (notes.isEmpty) return;
+  //
+  //   for (var data in notes) {
+  //     ref.read(notesProvider.notifier).addData(data);
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
